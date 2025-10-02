@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clearify</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #dff0f5;
+      color: #333;
+    }
+    header {
+      background: white;
+      padding: 1rem 500px;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      font-size: 2rem;
+      background: linear-gradient(to right, #2563eb, #42A5F5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      font-weight: 500;
+    }
+    section.hero {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    section.hero h1 {
+      font-size: 3rem;
+      background: linear-gradient(to right, #2563eb, #42A5F5);
+      display: inline-block;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .card-header {
+      background: #74D3AE;
+      color: white;
+      padding: 0.75rem 1rem;
+      font-weight: bold;
+    }
+    .card-content {
+      padding: 1rem;
+    }
+    textarea, input[type=text] {
+      width: 100%;
+      border: 2px solid #ddd;
+      border-radius: 0.4rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button.analyze {
+      background: #74D3AE;
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    button.analyze:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .results { margin-top: 2rem; }
+    .score {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      margin-right: 1rem;
+    }
+    .score.bias { background: #ffe58f; }
+    .score.risk { background: #ffccc7; }
+    .feedback-stars span {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .feedback-stars .active { color: gold; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Clearify</h1>
+    <nav>
+      <button>About Us</button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Clearify</h1>
+    <p>Advanced AI-powered bias detection and fake news analysis. Get instant insights into content reliability and political leaning.</p>
+  </section>
+
+  <main style="max-width: 700px; margin: auto; padding: 1rem;">
+    <div class="card">
+      <div class="card-header">Analyze Content</div>
+      <div class="card-content">
+        <label>Enter text to analyze:</label>
+        <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
+        <label style="margin-top:1rem; display:block;">Or enter a URL:</label>
+        <input type="text" id="inputUrl" placeholder="https://example.com/article">
+        <button id="analyzeBtn" class="analyze">Analyze Content</button>
+      </div>
+    </div>
+
+    <div id="results" class="results" style="display:none;">
+      <div class="card">
+        <div class="card-header">Analysis Complete</div>
+        <div class="card-content">
+          <p id="summary"></p>
+          <div>
+            <span id="biasScore" class="score bias"></span>
+            <span id="fakeNewsScore" class="score risk"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Feedback</div>
+        <div class="card-content">
+          <p>Rate the accuracy:</p>
+          <div class="feedback-stars" id="stars">
+            <span data-val="1">★</span>
+            <span data-val="2">★</span>
+            <span data-val="3">★</span>
+            <span data-val="4">★</span>
+            <span data-val="5">★</span>
+          </div>
+          <textarea id="feedbackText" rows="4" placeholder="Additional feedback..."></textarea>
+          <button id="feedbackBtn" class="analyze">Submit Feedback</button>
+          <p id="feedbackMsg" style="color:green; display:none;">Thanks for your feedback!</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const mockResults = {
+      biasScore: 72,
+      fakeNewsScore: 28,
+      summary: "This content shows moderate political bias but maintains factual accuracy."
+    };
+
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const resultsDiv = document.getElementById("results");
+
+    analyzeBtn.addEventListener("click", () => {
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = "Analyzing...";
+      setTimeout(() => {
+        document.getElementById("summary").textContent = mockResults.summary;
+        document.getElementById("biasScore").textContent = `Bias: ${mockResults.biasScore}%`;
+        document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${mockResults.fakeNewsScore}%`;
+        resultsDiv.style.display = "block";
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = "Analyze Content";
+      }, 2000);
+    });
+
+    // feedback stars
+    const stars = document.querySelectorAll("#stars span");
+    let rating = 0;
+    stars.forEach(star => {
+      star.addEventListener("click", () => {
+        rating = star.dataset.val;
+        stars.forEach(s => s.classList.toggle("active", s.dataset.val <= rating));
+      });
+    });
+
+    document.getElementById("feedbackBtn").addEventListener("click", () => {
+      if(rating > 0){
+        document.getElementById("feedbackMsg").style.display = "block";
+      } else {
+        alert("Please select a rating");
+      }
+    });
+  </script>
+
+</body>
+</html>

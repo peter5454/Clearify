@@ -10,4 +10,3 @@ classifier = pipeline(
 
 result = classifier("i")
 print(result)
-# Output: [{'label': 'POSITIVE', 'score': 0.9998}]
