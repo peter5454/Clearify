@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clearify - About Us</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #dff0f5;
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Top Bar Styles */
+        .top-bar {
+            position: absolute;
+            background-color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            top: 0;
+            left: 0;
+            right: 0;
+            line-height: 0;
+            font-style: normal;
+            box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+            white-space: nowrap;
+            height: 71px;
+            width: 100%;
+        }
+        
+        .logo {
+            position: absolute;
+            background: linear-gradient(to right, #2563eb, #42a5f5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            left: 473px;
+            font-size: 16px;
+            top: 39.5px;
+            transform: translateY(-50%);
+        }
+        
+        .logo p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        .about-link {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            left: 1361px;
+            font-size: 24px;
+            color: black;
+            top: 36.5px;
+            transform: translateY(-50%);
+        }
+        
+        .about-link p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        /* Main Content Styles */
+        .main-title {
+            position: absolute;
+            background: linear-gradient(to right, #2563eb, #42a5f5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            justify-content: center;
+            line-height: 0;
+            font-style: normal;
+            left: 852px;
+            font-size: 50px;
+            white-space: nowrap;
+            top: 124.5px;
+            transform: translateY(-50%);
+        }
+        
+        .main-title p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        .tagline {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            justify-content: center;
+            line-height: 0;
+            font-style: normal;
+            left: 774px;
+            font-size: 18px;
+            color: black;
+            white-space: nowrap;
+            top: 173.5px;
+            transform: translateY(-50%);
+        }
+        
+        .tagline p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        /* Mission Section */
+        .mission-container {
+            position: absolute;
+            background-color: white;
+            height: 380px;
+            left: 585px;
+            border-radius: 13px;
+            top: 210px;
+            width: 750px;
+            border: 1px solid black;
+        }
+        
+        .mission-header {
+            position: absolute;
+            background-color: #74d3ae;
+            height: 45px;
+            left: 586px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            top: 211px;
+            width: 748px;
+        }
+        
+        .mission-title {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            justify-content: center;
+            line-height: 0;
+            font-style: normal;
+            left: 598px;
+            font-size: 18px;
+            color: black;
+            white-space: nowrap;
+            top: 255.5px;
+            transform: translateY(-50%);
+        }
+        
+        .mission-title p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        .mission-text {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            justify-content: center;
+            line-height: 24.5px;
+            left: 956.5px;
+            font-style: normal;
+            font-size: 14px;
+            color: black;
+            text-align: center;
+            top: 427px;
+            transform: translateX(-50%) translateY(-50%);
+            width: 743px;
+        }
+        
+        .mission-text p {
+            margin-bottom: 0;
+        }
+        
+        /* Values and Contact Sections */
+        .values-container, .contact-container {
+            position: absolute;
+            background-color: white;
+            height: 358px;
+            border-radius: 13px;
+            top: 635px;
+            width: 363px;
+            border: 1px solid black;
+        }
+        
+        .values-container {
+            left: 586px;
+        }
+        
+        .contact-container {
+            left: 972px;
+        }
+        
+        .values-header, .contact-header {
+            position: absolute;
+            background-color: #74d3ae;
+            height: 42px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            top: 636px;
+            width: 361px;
+        }
+        
+        .values-header {
+            left: 587px;
+        }
+        
+        .contact-header {
+            left: 973px;
+            top: 637px;
+        }
+        
+        .values-title, .contact-title {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            justify-content: center;
+            line-height: 0;
+            font-style: normal;
+            font-size: 18px;
+            color: black;
+            white-space: nowrap;
+            top: 668.5px;
+            transform: translateY(-50%);
+        }
+        
+        .values-title {
+            left: 595px;
+        }
+        
+        .contact-title {
+            left: 983px;
+        }
+        
+        .values-title p, .contact-title p {
+            line-height: 24.5px;
+            white-space: pre;
+        }
+        
+        .values-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            height: 384px;
+            justify-content: center;
+            line-height: 19px;
+            left: 593px;
+            font-style: normal;
+            font-size: 0px;
+            color: black;
+            top: 857px;
+            transform: translateY(-50%);
+            width: 350px;
+        }
+        
+        .values-content p {
+            margin-bottom: 0;
+        }
+        
+        .values-content span.bold {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-style: normal;
+            font-size: 16px;
+        }
+        
+        .values-content span.normal {
+            font-size: 13px;
+        }
+        
+        .contact-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            height: 287px;
+            justify-content: center;
+            line-height: 19px;
+            left: 982px;
+            font-style: normal;
+            font-size: 0px;
+            color: black;
+            top: 840.5px;
+            transform: translateY(-50%);
+            width: 351px;
+        }
+        
+        .contact-content p {
+            margin-bottom: 0;
+        }
+        
+        .contact-content span.bold {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-style: normal;
+            font-size: 16px;
+        }
+        
+        .contact-content span.normal {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">
+            <p>Clearify</p>
+        </div>
+        <div class="about-link">
+            <p>About Us</p>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-title">
+        <p>Clearify</p>
+    </div>
+    
+    <div class="tagline">
+        <p>Fighting misinformation through technology</p>
+    </div>
+    
+    <!-- Mission Section -->
+    <div class="mission-container"></div>
+    <div class="mission-header"></div>
+    <div class="mission-title">
+        <p>Our Mission</p>
+    </div>
+    
+    <div class="mission-text">
+        <p>Our mission is to create a more transparent and trustworthy information landscape by giving readers the tools to critically evaluate the news they consume. In an age where stories can be shaped by hidden agendas, selective framing, or outright misinformation, we believe it is vital to provide clear, data-driven insights that help uncover bias and strengthen trust in reliable reporting. Clearify is designed not to dictate what people should think, but to offer the context and perspective necessary for independent, well-informed decision-making.</p>
+        <p>&nbsp;</p>
+        <p>We are committed to advancing both technology and media literacy. Through machine learning, natural language processing, and ongoing research, our platform continuously improves its ability to identify bias, misinformation, and reporting patterns across outlets. At the same time, we aim to encourage critical engagement by highlighting multiple perspectives and promoting dialogue. By combining innovation with education, we work toward a future where readers are empowered, news is more accountable, and public trust in information is restored.</p>
+    </div>
+    
+    <!-- Values Section -->
+    <div class="values-container"></div>
+    <div class="values-header"></div>
+    <div class="values-title">
+        <p>Our Values</p>
+    </div>
+    
+    <div class="values-content">
+        <p>
+            <span class="bold">Transparency</span>
+            <span class="normal"> – We believe in clarity and openness, both in the way we analyze news and in how we present our findings.</span>
+        </p>
+        <p class="normal">&nbsp;</p>
+        <p>
+            <span class="bold">Objectivity</span>
+            <span class="normal"> – Our platform is designed to minimize human bias, focusing on data-driven insights and evidence-based evaluations.</span>
+        </p>
+        <p class="normal">&nbsp;</p>
+        <p>
+            <span class="bold">Empowerment</span>
+            <span class="normal"> – We aim to give readers the tools to think critically and make their own informed decisions.</span>
+        </p>
+        <p class="normal">&nbsp;</p>
+        <p>
+            <span class="bold">Innovation</span>
+            <span class="normal"> – By continuously refining our models and methods, we stay ahead of emerging challenges in misinformation and media bias.</span>
+        </p>
+        <p class="normal">&nbsp;</p>
+        <p class="normal">&nbsp;</p>
+    </div>
+    
+    <!-- Contact Section -->
+    <div class="contact-container"></div>
+    <div class="contact-header"></div>
+    <div class="contact-title">
+        <p>Contact Us</p>
+    </div>
+    
+    <div class="contact-content">
+        <p class="bold">General Inquiries: </p>
+        <p class="normal">support@clearifynews.com</p>
+        <p class="normal">
+            <span class="bold">
+                <br>
+                Partnerships & Media: 
+            </span>
+            partnerships@clearifynews.com
+        </p>
+        <p class="normal">
+            <span>
+                <br>
+            </span>
+            <span class="bold">Technical Support: </span>
+        </p>
+        <p class="normal">tech@clearifynews.com</p>
+        <p class="normal">&nbsp;</p>
+        <p class="normal">
+            <span class="bold">Phone:</span> 
+        </p>
+        <p class="normal">+64 4 123 4567</p>
+        <p class="normal">
+            <span>
+                <br>
+            </span>
+            <span class="bold">Address:</span> 
+        </p>
+        <p class="normal">120 Media Lane, Wellington, New Zealand</p>
+    </div>
+</body>
+</html>
