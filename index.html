@@ -54,6 +54,7 @@
       margin: 1rem 0;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
       overflow: hidden;
+      
     }
     .card-header {
       background: #74D3AE;
@@ -70,6 +71,8 @@
       border-radius: 0.4rem;
       padding: 0.5rem;
       font-size: 1rem;
+      resize: none;
+      box-sizing: border-box;
     }
     button.analyze {
       background: #74D3AE;
@@ -101,6 +104,56 @@
       cursor: pointer;
     }
     .feedback-stars .active { color: gold; }
+    .tick {
+      vertical-align: -5px; /* moves image slightly lower relative to text */
+    }
+    /*Button slider*/
+        .switch-container {
+      height: 40px;
+      background: #74D3AE;
+      border-radius: 30px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-family: sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .switch-label {
+      flex: 1;
+      text-align: center;
+      z-index: 2; /* make sure text stays visible */
+      color: black;
+    }
+
+    .switch-slider {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 320px;
+      height: 30px;
+      background: white;
+      border-radius: 25px;
+      transition: all 0.5s ease;
+      z-index: 1;
+    }
+
+    .switch-container.active .switch-slider {
+      left: 342px; /* move to the right */
+      background: white;
+    }
+
+    .switch-container.active .switch-label.text {
+      color: black;
+    }
+    .switch-container:not(.active) .switch-label.url {
+      color: black;
+    }
   </style>
 </head>
 <body>
@@ -114,18 +167,38 @@
 
   <section class="hero">
     <h1>Clearify</h1>
-    <p>Advanced AI-powered bias detection and fake news analysis. Get instant insights into content reliability and political leaning.</p>
+    <p>Advanced AI-powered bias detection and fake news analysis. Get instant</p>
+    <p>insights into content reliability and political leaning.</p>
+  <span><img src="Tick Box.png" alt="Tick Box" width="20"class="tick"> Reliable</span>
+  <span><img src="Tick Box.png" alt="Tick Box" width="20"class="tick"> Real-time analysis</span>
+  <span><img src="Tick Box.png" alt="Tick Box" width="20"class="tick"> Fast</span>
   </section>
 
   <main style="max-width: 700px; margin: auto; padding: 1rem;">
     <div class="card">
       <div class="card-header">Analyze Content</div>
       <div class="card-content">
-        <label>Enter text to analyze:</label>
-        <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
-        <label style="margin-top:1rem; display:block;">Or enter a URL:</label>
-        <input type="text" id="inputUrl" placeholder="https://example.com/article">
-        <button id="analyzeBtn" class="analyze">Analyze Content</button>
+    <div class="switch-container active" id="toggleSwitch" style="margin-bottom:1rem;">
+      <div class="switch-label text">Text Analysis</div>
+      <div class="switch-label url">URL Analysis</div>
+      <div class="switch-slider"></div>
+    </div>
+
+  <!-- Text Input -->
+  <div id="textInputWrapper">
+    <label>Enter text to analyze:</label>
+    <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
+  </div>
+
+  <!-- URL Input -->
+  <div id="urlInputWrapper" style="display:none;">
+    <label>Enter a URL to analyze:</label>
+    <input type="text" id="inputUrl" placeholder="https://example.com/article">
+  </div>
+
+  <button id="analyzeBtn" class="analyze">Analyze Content</button>
+</div>
+
       </div>
     </div>
 
@@ -161,6 +234,30 @@
   </main>
 
   <script>
+    const toggleSwitch = document.getElementById("toggleSwitch");
+    const textWrapper = document.getElementById("textInputWrapper");
+    const urlWrapper = document.getElementById("urlInputWrapper");
+
+    let usingText = true;
+    toggleSwitch.classList.remove("active"); // no active = Text
+    textWrapper.style.display = "block";
+    urlWrapper.style.display = "none";
+
+    toggleSwitch.addEventListener("click", () => {
+      usingText = !usingText;
+      toggleSwitch.classList.toggle("active", !usingText); // active = URL mode
+
+      if (usingText) {
+        textWrapper.style.display = "block";
+        urlWrapper.style.display = "none";
+        console.log("Switched to TEXT input");
+      } else {
+        textWrapper.style.display = "none";
+        urlWrapper.style.display = "block";
+        console.log("Switched to URL input");
+      }
+    });
+
     const mockResults = {
       biasScore: 72,
       fakeNewsScore: 28,
