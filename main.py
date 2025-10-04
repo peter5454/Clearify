@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, jsonify
+from scraper import scrape_article
+import nltk
+nltk.download('punkt_tab')
 
 app = Flask(__name__)
 
@@ -30,3 +33,6 @@ def analyze():
 @app.route('/about')
 def about():
     return render_template('about.html')  # static info
+
+if __name__ == "__main__":
+    app.run(debug=True)
