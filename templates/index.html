@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clearify</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header>
+    <h1>Clearify</h1>
+    <nav>
+      <button><a href="{{ url_for('about') }}">About Us</a></button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Clearify</h1>
+    <p>Advanced AI-powered bias detection and fake news analysis. Get instant</p>
+    <p>insights into content reliability and political leaning.</p>
+  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Reliable</span>
+  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Real-time analysis</span>
+  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Fast</span>
+  </section>
+
+  <main style="max-width: 700px; margin: auto; padding: 1rem;">
+    <div class="card">
+      <div class="card-header">Analyze Content</div>
+      <div class="card-content">
+    <div class="switch-container active" id="toggleSwitch" style="margin-bottom:1rem;">
+      <div class="switch-label text">Text Analysis</div>
+      <div class="switch-label url">URL Analysis</div>
+      <div class="switch-slider"></div>
+    </div>
+
+  <!-- Text Input -->
+  <div id="textInputWrapper">
+    <label>Enter text to analyze:</label>
+    <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
+  </div>
+
+  <!-- URL Input -->
+  <div id="urlInputWrapper" style="display:none;">
+    <label>Enter a URL to analyze:</label>
+    <input type="text" id="inputUrl" placeholder="https://example.com/article">
+  </div>
+
+  <button id="analyzeBtn" class="analyze">Analyze Content</button>
+</div>
+
+      </div>
+    </div>
+
+    <div id="results" class="results" style="display:none;">
+      <div class="card">
+        <div class="card-header">Analysis Complete</div>
+        <div class="card-content">
+          <p id="summary"></p>
+          <div>
+            <span id="biasScore" class="score bias"></span>
+            <span id="fakeNewsScore" class="score risk"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Feedback</div>
+        <div class="card-content">
+          <p>Rate the accuracy:</p>
+          <div class="feedback-stars" id="stars">
+            <span data-val="1">★</span>
+            <span data-val="2">★</span>
+            <span data-val="3">★</span>
+            <span data-val="4">★</span>
+            <span data-val="5">★</span>
+          </div>
+          <textarea id="feedbackText" rows="4" placeholder="Additional feedback..."></textarea>
+          <button id="feedbackBtn" class="analyze">Submit Feedback</button>
+          <p id="feedbackMsg" style="color:green; display:none;">Thanks for your feedback!</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
