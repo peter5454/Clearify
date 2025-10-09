@@ -199,3 +199,41 @@ button.analyze:disabled {
 #analysis-summary {
   margin-bottom: 1.5rem;
 }
+
+/* ----- TABLE STYLING ----- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  font-weight: bold;
+  background-color: #f8f9fa;
+}
+
+/* ----- SUMMARY BLOCKS ----- */
+.summary-block {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.summary-block:last-child {
+  border-bottom: none;
+}
+
+.summary-block ul {
+  list-style-type: disc;
+  margin-left: 1.2rem;
+}
+
+.summary-block strong {
+  color: #2563eb;
+}

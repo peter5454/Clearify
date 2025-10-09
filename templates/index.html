@@ -18,56 +18,145 @@
     <h1>Clearify</h1>
     <p>Advanced AI-powered bias detection and fake news analysis. Get instant</p>
     <p>insights into content reliability and political leaning.</p>
-  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Reliable</span>
-  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Real-time analysis</span>
-  <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Fast</span>
+    <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Reliable</span>
+    <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Real-time analysis</span>
+    <span><img src="{{ url_for('static', filename='Tick Box.png') }}" alt="Tick Box" width="20"class="tick"> Fast</span>
   </section>
 
   <main style="max-width: 700px; margin: auto; padding: 1rem;">
     <div class="card">
       <div class="card-header">Analyze Content</div>
       <div class="card-content">
-    <div class="switch-container active" id="toggleSwitch" style="margin-bottom:1rem;">
-      <div class="switch-label text">Text Analysis</div>
-      <div class="switch-label url">URL Analysis</div>
-      <div class="switch-slider"></div>
-    </div>
+        <div class="switch-container active" id="toggleSwitch" style="margin-bottom:1rem;">
+          <div class="switch-label text">Text Analysis</div>
+          <div class="switch-label url">URL Analysis</div>
+          <div class="switch-slider"></div>
+        </div>
 
-  <!-- Text Input -->
-  <div id="textInputWrapper">
-    <label>Enter text to analyze:</label>
-    <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
-  </div>
+        <!-- Text Input -->
+        <div id="textInputWrapper">
+          <label>Enter text to analyze:</label>
+          <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
+        </div>
 
-  <!-- URL Input -->
-  <div id="urlInputWrapper" style="display:none;">
-    <label>Enter a URL to analyze:</label>
-    <input type="text" id="inputUrl" placeholder="https://example.com/article">
-  </div>
+        <!-- URL Input -->
+        <div id="urlInputWrapper" style="display:none;">
+          <label>Enter a URL to analyze:</label>
+          <input type="text" id="inputUrl" placeholder="https://example.com/article">
+        </div>
 
-  <button id="analyzeBtn" class="analyze">Analyze Content</button>
-</div>
-
+        <button id="analyzeBtn" class="analyze">Analyze Content</button>
       </div>
     </div>
 
-    <!--Analysis Complete Section-->
+    <!-- Analysis Results Section -->
     <div id="results" class="results" style="display:none;">
+      
+      <!-- Quick Score Overview -->
       <div class="card">
         <div class="card-header">Analysis Complete</div>
         <div class="card-content">
-          <p id="summary"></p>
+          <p id="summary">Content analyzed successfully. <span id="wordsAnalyzed">0</span> words processed.</p>
           <div>
-            <span id="biasScore" class="score bias"></span>
-            <span id="fakeNewsScore" class="score risk"></span>
+            <span id="biasScore" class="score bias">Bias: 0%</span>
+            <span id="fakeNewsScore" class="score risk">Fake News Risk: 0%</span>
           </div>
         </div>
       </div>
 
+      <!-- Domain Data Score -->
+      <div class="card">
+        <div class="card-header">Domain Data Score</div>
+        <div class="card-content">
+          <table>
+            <tr>
+              <th>Description</th>
+              <th>User/Computer Data</th>
+            </tr>
+            <tr>
+              <td id="reliableScore">72% Reliable devices</td>
+              <td id="redFlagScore">28% Red flags</td>
+            </tr>
+          </table>
+          <p><em>Higher scores indicate more reliable content</em></p>
+        </div>
+      </div>
+
+      <!-- Language and Tone Analysis -->
+      <div class="card">
+        <div class="card-header">Language and Tone Analysis</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <strong>Code for user data:</strong>
+            <p>Language and tone: <span id="emotionalWords">12%</span> of words were emotionally charged</p>
+          </div>
+          
+          <div class="summary-block">
+            <strong>The words have been cleaned, sorted:</strong>
+            <p>Source Reliability: <strong id="sourceReliability">High</strong></p>
+          </div>
+
+          <div class="summary-block">
+            <strong>Framing and perspective:</strong>
+            <p id="framingPerspective">Recent reading via government sources, can elaborate reading as possible</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sentiment Analysis -->
+      <div class="card">
+        <div class="card-header">Sentiment and Bias</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <p><span id="positiveSentiment">90%</span> of content shows Positive sentiment</p>
+            <p><span id="negativeSentiment">84%</span> of content shows Negative sentiment about government work</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Repetition -->
+      <div class="card">
+        <div class="card-header">Word Repetition Analysis</div>
+        <div class="card-content">
+          <ul id="wordRepetitionList">
+            <!-- Will be populated by JavaScript -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Analysis Summary -->
+      <div class="card" id="analysis-summary">
+        <div class="card-header">Analysis Summary</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <strong>Overview:</strong>
+            <p id="overviewText">This content demonstrates moderate political bias but maintains factual accuracy.</p>
+          </div>
+
+          <div class="summary-block">
+            <strong>Reliability:</strong>
+            <p id="reliabilityText">Most sources appear trustworthy, with minor subjective language detected.</p>
+          </div>
+
+          <div class="summary-block">
+            <strong>Key Points:</strong>
+            <ul id="keyPointsList">
+              <!-- Will be populated by JavaScript -->
+            </ul>
+          </div>
+
+          <div class="summary-block">
+            <strong>Recommendation:</strong>
+            <p id="recommendationText">Cross-check similar sources to confirm facts and reduce potential framing bias.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Section -->
       <div class="card">
         <div class="card-header">Feedback</div>
         <div class="card-content">
-          <p>Rate the accuracy:</p>
+          <p>Rate the accuracy of this analysis:</p>
           <div class="feedback-stars" id="stars">
             <span data-val="1">★</span>
             <span data-val="2">★</span>
@@ -81,36 +170,6 @@
         </div>
       </div>
     </div>
-    
-    <!--Analysis Summary Section -->
-<div class="card" id="analysis-summary" style="margin-top: 2rem; display: none;">
-  <div class="card-header">Analysis Summary</div>
-  <div class="card-content">
-    <div class="summary-block">
-      <strong>Overview:</strong>
-      <p>This content demonstrates moderate political bias but maintains factual accuracy.</p>
-    </div>
-
-    <div class="summary-block">
-      <strong>Reliability:</strong>
-      <p>Most sources appear trustworthy, with minor subjective language detected.</p>
-    </div>
-
-    <div class="summary-block">
-      <strong>Key Points:</strong>
-      <ul>
-        <li>Emotionally charged words: <b>12%</b></li>
-        <li>Source reliability: <b>High</b></li>
-        <li>Overall tone: <b>Balanced but critical</b></li>
-      </ul>
-    </div>
-
-    <div class="summary-block">
-      <strong>Recommendation:</strong>
-      <p>Cross-check similar sources to confirm facts and reduce potential framing bias.</p>
-    </div>
-  </div>
-</div>
 
   </main>
   <script src="{{ url_for('static', filename='script.js') }}"></script>

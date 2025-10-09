@@ -8,31 +8,51 @@ app = Flask(__name__)
 # 1. Main page
 @app.route('/')
 def home():
-    return render_template('index.html')  # contains input + submit form
+    return render_template('index.html')
 
-# 2. Analyze
+# 2. Analyze - Now returns JSON for same-page updates
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    user_text = request.form.get("text")  # if using a form
-    # user_text = request.json.get("text")  # if sending JSON via fetch()
-
-    # TODO: replace with real analysis model
+    user_text = request.form.get("text")
+    input_type = request.form.get("input_type", "text")
+    
+    # If URL input, scrape the article first
+    if input_type == "url" and user_text:
+        try:
+            scraped_data = scrape_article(user_text)
+            user_text = scraped_data.get("text", user_text)
+        except Exception as e:
+            print(f"Scraping error: {e}")
+    
+    # Generate analysis results (replace with real ML model)
     result = {
-        "words_analyzed": len(user_text.split()),
-        "propaganda_percentage": 18,
-        "bias_score": 0.42
+        "words_analyzed": len(user_text.split()) if user_text else 0,
+        "domain_data_score": 72,
+        "user_computer_data": 28,
+        "emotional_words_percentage": 12,
+        "source_reliability": "High",
+        "positive_sentiment": 90,
+        "negative_sentiment": 84,
+        "word_repetition": [
+            {"word": "Crisis", "count": 22},
+            {"word": "Government warned", "count": 18},
+            {"word": "Urgent", "count": 16}
+        ],
+        "framing_perspective": "Recent reading via government sources, can elaborate reading as possible",
+        "overall_tone": "Balanced but critical",
+        "recommendation": "Cross-check similar sources to confirm facts and reduce potential framing bias.",
+        "bias_score": 45,
+        "fake_news_risk": 18,
+        "overview": "This content demonstrates moderate political bias but maintains factual accuracy.",
+        "reliability": "Most sources appear trustworthy, with minor subjective language detected."
     }
 
-    # Option A: render result page
-    return render_template('results.html', result=result, text=user_text)
-
-    # Option B: return JSON if frontend handles UI
-    # return jsonify(result)
+    return jsonify(result)
 
 # 3. About Us
 @app.route('/about')
 def about():
-    return render_template('about.html')  # static info
+    return render_template('about.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
