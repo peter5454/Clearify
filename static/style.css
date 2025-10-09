@@ -184,3 +184,18 @@ button.analyze:disabled {
 .switch-container:not(.active) .switch-label.url {
   color: black;
 }
+
+.summary-block {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.summary-block ul {
+  list-style-type: disc;
+  margin-left: 1.2rem;
+}
+
+#analysis-summary {
+  margin-bottom: 1.5rem;
+}

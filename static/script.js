@@ -31,14 +31,44 @@ toggleSwitch.addEventListener("click", () => {
 // Mock Analysis Results
 // (Replace this section with your Flask API call later)
 // ----------------------------
-const mockResults = {
-  biasScore: 72,
-  fakeNewsScore: 28,
-  summary: "This content shows moderate political bias but maintains factual accuracy."
-};
+// Show the Analysis Summary section dynamically
 
-const analyzeBtn = document.getElementById("analyzeBtn");
-const resultsDiv = document.getElementById("results");
+function showAnalysisSummary() {
+  const summarySection = document.getElementById("analysis-summary");
+  summarySection.style.display = "block";
+}
+
+// Example: Button click handler for your "Analyze" button
+document.getElementById("analyzeBtn").addEventListener("click", function() {
+  const analyzeBtn = this;
+  const resultsDiv = document.getElementById("results");
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = "Analyzing...";
+
+  // Mock delay for analysis
+  setTimeout(() => {
+    // Example mock results
+    const mockResults = {
+      summary: "Content analyzed successfully",
+      biasScore: 45,
+      fakeNewsScore: 18,
+    };
+
+    // Update your results area
+    document.getElementById("summary").textContent = mockResults.summary;
+    document.getElementById("biasScore").textContent = `Bias: ${mockResults.biasScore}%`;
+    document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${mockResults.fakeNewsScore}%`;
+    resultsDiv.style.display = "block";
+
+    // Show Analysis Summary
+    showAnalysisSummary();
+
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "Analyze Content";
+  }, 2000);
+});
+
 
 analyzeBtn.addEventListener("click", async () => {
   analyzeBtn.disabled = true;

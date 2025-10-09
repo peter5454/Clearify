@@ -51,6 +51,7 @@
       </div>
     </div>
 
+    <!--Analysis Complete Section-->
     <div id="results" class="results" style="display:none;">
       <div class="card">
         <div class="card-header">Analysis Complete</div>
@@ -80,6 +81,37 @@
         </div>
       </div>
     </div>
+    
+    <!--Analysis Summary Section -->
+<div class="card" id="analysis-summary" style="margin-top: 2rem; display: none;">
+  <div class="card-header">Analysis Summary</div>
+  <div class="card-content">
+    <div class="summary-block">
+      <strong>Overview:</strong>
+      <p>This content demonstrates moderate political bias but maintains factual accuracy.</p>
+    </div>
+
+    <div class="summary-block">
+      <strong>Reliability:</strong>
+      <p>Most sources appear trustworthy, with minor subjective language detected.</p>
+    </div>
+
+    <div class="summary-block">
+      <strong>Key Points:</strong>
+      <ul>
+        <li>Emotionally charged words: <b>12%</b></li>
+        <li>Source reliability: <b>High</b></li>
+        <li>Overall tone: <b>Balanced but critical</b></li>
+      </ul>
+    </div>
+
+    <div class="summary-block">
+      <strong>Recommendation:</strong>
+      <p>Cross-check similar sources to confirm facts and reduce potential framing bias.</p>
+    </div>
+  </div>
+</div>
+
   </main>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
