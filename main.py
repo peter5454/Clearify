@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from scraper import scrape_article
 import nltk
 nltk.download('punkt_tab')
+from spacyanalyzer import full_analysis
 
 app = Flask(__name__)
 
@@ -15,6 +16,8 @@ def home():
 def analyze():
     user_text = request.form.get("text")
     input_type = request.form.get("input_type", "text")
+    text = request.form['text']
+    analysis = full_analysis(text)
     
     # If URL input, scrape the article first
     if input_type == "url" and user_text:
@@ -23,6 +26,7 @@ def analyze():
             user_text = scraped_data.get("text", user_text)
         except Exception as e:
             print(f"Scraping error: {e}")
+    
     
     # Generate analysis results (replace with real ML model)
     result = {
