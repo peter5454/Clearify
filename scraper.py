@@ -16,6 +16,10 @@ def scrape_article(url: str) -> dict:
     article.parse()
     article.nlp()
 
+def fetch_data():
+    text = scrape_article()
+    return [{"text": text}]
+
     return {
         "title": article.title,
         "authors": article.authors,

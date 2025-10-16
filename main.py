@@ -3,6 +3,9 @@ from scraper import scrape_article
 import nltk
 nltk.download('punkt_tab')
 from spacyanalyzer import full_analysis
+from scraper import fetch_data
+import spacyanalyzer
+import torch
 
 app = Flask(__name__)
 
@@ -10,6 +13,11 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return render_template('index.html')
+
+def main():
+    for doc in docs:
+        processed = analyze_text(text)
+        results.append(processed)
 
 # 2. Analyze - Now returns JSON for same-page updates
 @app.route('/analyze', methods=['POST'])
