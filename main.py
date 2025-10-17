@@ -6,17 +6,24 @@ from spacyanalyzer import full_analysis
 from scraper import fetch_data
 import spacyanalyzer
 import torch
+import spacy
 
 app = Flask(__name__)
 
 # 1. Main page
 @app.route('/')
 def home():
-    return render_template('index.html')
+    results = None
+    text = ""
+    if request.method == "POST":
+        text = request.form["user_input"]
+        results = full_analysis(text)
+    return render_template('index.html', results=results, text=text)
 
 def main():
+    results=[]
     for doc in docs:
-        processed = analyze_text(text)
+        processed = analyze_text(doc)
         results.append(processed)
 
 # 2. Analyze - Now returns JSON for same-page updates
