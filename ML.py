@@ -1,4 +1,4 @@
-from spacyanalyzer import analyze_text
+from spacyanalyzer import analyze_entities as analyze_text
 
 def clean_text(text: str) -> str:
     """

@@ -1,13 +1,13 @@
-// ----------------------------
-// Toggle between Text and URL input
-// ----------------------------
+// ========================================================
+// TOGGLE BETWEEN TEXT AND URL INPUT
+// ========================================================
 const toggleSwitch = document.getElementById("toggleSwitch");
 const textWrapper = document.getElementById("textInputWrapper");
 const urlWrapper = document.getElementById("urlInputWrapper");
 
 let usingText = true;
 
-// Initialize default mode (Text Analysis)
+// Default mode: Text Analysis
 toggleSwitch.classList.remove("active");
 textWrapper.style.display = "block";
 urlWrapper.style.display = "none";
@@ -25,14 +25,13 @@ toggleSwitch.addEventListener("click", () => {
   }
 });
 
-// ----------------------------
-// Analysis Function
-// ----------------------------
-document.getElementById("analyzeBtn").addEventListener("click", async function() {
+// ========================================================
+// ANALYZE CONTENT BUTTON
+// ========================================================
+document.getElementById("analyzeBtn").addEventListener("click", async function () {
   const analyzeBtn = this;
   const resultsDiv = document.getElementById("results");
-  
-  // Get input based on current mode
+
   let userInput, inputType;
   if (usingText) {
     userInput = document.getElementById("inputText").value;
@@ -41,7 +40,7 @@ document.getElementById("analyzeBtn").addEventListener("click", async function()
     userInput = document.getElementById("inputUrl").value;
     inputType = "url";
   }
-  
+
   if (!userInput.trim()) {
     alert("Please enter some text or a URL to analyze.");
     return;
@@ -51,88 +50,127 @@ document.getElementById("analyzeBtn").addEventListener("click", async function()
   analyzeBtn.textContent = "Analyzing...";
 
   try {
-    // Create form data
     const formData = new FormData();
     formData.append("text", userInput);
     formData.append("input_type", inputType);
 
-    // Send to Flask backend
     const response = await fetch("/analyze", {
       method: "POST",
-      headers: {
-        'Accept': 'application/json',
-      },
-      body: formData
+      headers: { "Accept": "application/json" },
+      body: formData,
     });
 
     if (response.ok) {
       const result = await response.json();
       displayResults(result);
       resultsDiv.style.display = "block";
-      
-      // Scroll to results
-      resultsDiv.scrollIntoView({ behavior: 'smooth' });
+      resultsDiv.scrollIntoView({ behavior: "smooth" });
     } else {
       throw new Error("Analysis failed");
     }
   } catch (error) {
     console.error("Error:", error);
-    // Fallback to mock data if API fails
-    displayMockResults();
+    displayMockResults(); // fallback for demo
     resultsDiv.style.display = "block";
-    resultsDiv.scrollIntoView({ behavior: 'smooth' });
+    resultsDiv.scrollIntoView({ behavior: "smooth" });
   } finally {
     analyzeBtn.disabled = false;
     analyzeBtn.textContent = "Analyze Content";
   }
 });
 
-// ----------------------------
-// Display Results Function
-// ----------------------------
+// ========================================================
+// DISPLAY RESULTS FUNCTION
+// ========================================================
 function displayResults(result) {
-  // Update basic metrics
+  // ----- Basic Overview -----
   document.getElementById("wordsAnalyzed").textContent = result.words_analyzed;
   document.getElementById("biasScore").textContent = `Bias: ${result.bias_score}%`;
   document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${result.fake_news_risk}%`;
-  
-  // Update domain data scores
+
+  // ----- Domain Data -----
   document.getElementById("reliableScore").textContent = `${result.domain_data_score}% Reliable devices`;
   document.getElementById("redFlagScore").textContent = `${result.user_computer_data}% Red flags`;
-  
-  // Update language analysis
+
+  // ----- Language and Tone -----
   document.getElementById("emotionalWords").textContent = `${result.emotional_words_percentage}%`;
   document.getElementById("sourceReliability").textContent = result.source_reliability;
   document.getElementById("framingPerspective").textContent = result.framing_perspective;
-  
-  // Update sentiment
+
+  // ----- Sentiment -----
   document.getElementById("positiveSentiment").textContent = `${result.positive_sentiment}%`;
   document.getElementById("negativeSentiment").textContent = `${result.negative_sentiment}%`;
-  
-  // Update word repetition
+
+  // ----- Word Repetition -----
   const wordList = document.getElementById("wordRepetitionList");
-  wordList.innerHTML = '';
-  result.word_repetition.forEach(wordData => {
-    const li = document.createElement('li');
+  wordList.innerHTML = "";
+  result.word_repetition.forEach((wordData) => {
+    const li = document.createElement("li");
     li.innerHTML = `<strong>${wordData.word}:</strong> ${wordData.count} occurrences`;
     wordList.appendChild(li);
   });
-  
-  // Update summary sections
-  document.getElementById("overviewText").textContent = result.overview || "This content demonstrates moderate political bias but maintains factual accuracy.";
-  document.getElementById("reliabilityText").textContent = result.reliability || "Most sources appear trustworthy, with minor subjective language detected.";
-  document.getElementById("recommendationText").textContent = result.recommendation || "Cross-check similar sources to confirm facts and reduce potential framing bias.";
-  
-  // Update key points
+
+  // ----- Summary Sections -----
+  document.getElementById("overviewText").textContent =
+    result.overview || "This content demonstrates moderate political bias but maintains factual accuracy.";
+  document.getElementById("reliabilityText").textContent =
+    result.reliability || "Most sources appear trustworthy, with minor subjective language detected.";
+  document.getElementById("recommendationText").textContent =
+    result.recommendation || "Cross-check similar sources to confirm facts and reduce potential framing bias.";
+
+  // ----- Key Points -----
   const keyPointsList = document.getElementById("keyPointsList");
   keyPointsList.innerHTML = `
     <li>Emotionally charged words: <b>${result.emotional_words_percentage}%</b></li>
     <li>Source reliability: <b>${result.source_reliability}</b></li>
     <li>Overall tone: <b>${result.overall_tone}</b></li>
   `;
+
+  // ----- Sentiment Chart -----
+  if (window.sentimentChart instanceof Chart) {
+    window.sentimentChart.destroy();
+  }
+  const ctxSentiment = document.getElementById("sentimentChart");
+  window.sentimentChart = new Chart(ctxSentiment, {
+    type: "bar",
+    data: {
+      labels: ["Positive", "Negative"],
+      datasets: [
+        {
+          label: "Sentiment Distribution",
+          data: [result.positive_sentiment, result.negative_sentiment],
+          backgroundColor: ["#4CAF50", "#F44336"],
+        },
+      ],
+    },
+    options: { responsive: true },
+  });
+
+  // ----- Word Frequency Chart -----
+  if (window.wordChart instanceof Chart) {
+    window.wordChart.destroy();
+  }
+  const ctxWord = document.getElementById("wordChart");
+  const labels = result.word_repetition.map((w) => w.word);
+  const counts = result.word_repetition.map((w) => w.count);
+  window.wordChart = new Chart(ctxWord, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          data: counts,
+          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#9CCC65", "#FF7043"],
+        },
+      ],
+    },
+    options: { responsive: true },
+  });
 }
 
-// Mock results for fallback
+// ========================================================
+// MOCK RESULTS FOR FALLBACK
+// ========================================================
 function displayMockResults() {
   const mockResult = {
     words_analyzed: 450,
@@ -143,32 +181,30 @@ function displayMockResults() {
     positive_sentiment: 90,
     negative_sentiment: 84,
     word_repetition: [
-      {"word": "Crisis", "count": 22},
-      {"word": "Government warned", "count": 18},
-      {"word": "Urgent", "count": 16}
+      { word: "Crisis", count: 22 },
+      { word: "Government warned", count: 18 },
+      { word: "Urgent", count: 16 },
     ],
-    framing_perspective: "Recent reading via government sources, can elaborate reading as possible",
+    framing_perspective: "Recent reading via government sources.",
     overall_tone: "Balanced but critical",
     bias_score: 45,
     fake_news_risk: 18,
     overview: "This content demonstrates moderate political bias but maintains factual accuracy.",
     reliability: "Most sources appear trustworthy, with minor subjective language detected.",
-    recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias."
+    recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias.",
   };
-  
+
   displayResults(mockResult);
 }
 
-// ----------------------------
-// Feedback System
-// ----------------------------
+// FEEDBACK SYSTEM
 const stars = document.querySelectorAll("#stars span");
 let rating = 0;
 
-stars.forEach(star => {
+stars.forEach((star) => {
   star.addEventListener("click", () => {
     rating = star.dataset.val;
-    stars.forEach(s => {
+    stars.forEach((s) => {
       s.classList.toggle("active", s.dataset.val <= rating);
     });
   });
