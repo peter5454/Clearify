@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clearify</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <!-- ===== HEADER ===== -->
+  <header>
+    <h1>Clearify</h1>
+    <nav>
+      <button><a href="{{ url_for('about') }}">About Us</a></button>
+    </nav>
+  </header>
+
+  <!-- ===== HERO SECTION ===== -->
+  <section class="hero">
+    <h1>Clearify</h1>
+    <p>Advanced AI-powered bias detection and fake news analysis.</p>
+    <p>Get instant insights into content reliability and political leaning.</p>
+
+    <div class="hero-tags">
+      <span><img src="{{ url_for('static', filename='Tick Box.png') }}" width="20" class="tick"> Reliable</span>
+      <span><img src="{{ url_for('static', filename='Tick Box.png') }}" width="20" class="tick"> Real-time analysis</span>
+      <span><img src="{{ url_for('static', filename='Tick Box.png') }}" width="20" class="tick"> Fast</span>
+    </div>
+  </section>
+
+  <!-- ===== MAIN ANALYSIS SECTION ===== -->
+  <main style="max-width: 700px; margin: auto; padding: 1rem;">
+    <!-- ===== INPUT CARD ===== -->
+    <div class="card">
+      <div class="card-header">Analyze Content</div>
+      <div class="card-content">
+        <!-- Toggle Switch -->
+        <div class="switch-container active" id="toggleSwitch" style="margin-bottom:1rem;">
+          <div class="switch-label text">Text Analysis</div>
+          <div class="switch-label url">URL Analysis</div>
+          <div class="switch-slider"></div>
+        </div>
+
+        <!-- Text Input -->
+        <div id="textInputWrapper">
+          <label for="inputText">Enter text to analyze:</label>
+          <textarea id="inputText" rows="6" placeholder="Paste text here..."></textarea>
+        </div>
+
+        <!-- URL Input -->
+        <div id="urlInputWrapper" style="display:none;">
+          <label for="inputUrl">Enter a URL to analyze:</label>
+          <input type="text" id="inputUrl" placeholder="https://example.com/article" />
+        </div>
+
+        <button id="analyzeBtn" class="analyze">Analyze Content</button>
+      </div>
+    </div>
+
+    <!-- ===== RESULTS SECTION (hidden until analysis complete) ===== -->
+    <section id="results" class="results" style="display:none;">
+      
+      <!-- ===== Analysis Overview ===== -->
+      <div class="card">
+        <div class="card-header">Analysis Complete: Bias & Fake News Risk</div>
+        <div class="card-content">
+          <p id="summary">Content analyzed successfully. <span id="wordsAnalyzed">0</span> words processed.</p>
+          <div class="score-container">
+            <span id="biasScore" class="score bias">Bias: 0%</span>
+            <span id="fakeNewsScore" class="score risk">Fake News Risk: 0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Domain Data Score ===== -->
+      <div class="card">
+        <div class="card-header">Domain Data Score</div>
+        <div class="card-content">
+          <table>
+            <tr><th>Description</th><th>User/Computer Data</th></tr>
+            <tr>
+              <td id="reliableScore">72% Reliable devices</td>
+              <td id="redFlagScore">28% Red flags</td>
+            </tr>
+          </table>
+          <p><em>Higher scores indicate more reliable content</em></p>
+        </div>
+      </div>
+
+      <!-- ===== Language and Tone Analysis ===== -->
+      <div class="card">
+        <div class="card-header">Language and Tone Analysis</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <strong>Code for user data:</strong>
+            <p>Language and tone: <span id="emotionalWords">12%</span> of words were emotionally charged</p>
+          </div>
+          <div class="summary-block">
+            <strong>Word Cleaning & Sorting:</strong>
+            <p>Source Reliability: <strong id="sourceReliability">High</strong></p>
+          </div>
+          <div class="summary-block">
+            <strong>Framing and Perspective:</strong>
+            <p id="framingPerspective">Recent reading via government sources, elaboration possible.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Sentiment and Bias ===== -->
+      <div class="card">
+        <div class="card-header">Sentiment and Bias</div>
+        <div class="card-content">
+          <p><span id="positiveSentiment">90%</span> Positive sentiment</p>
+          <p><span id="negativeSentiment">84%</span> Negative sentiment about government work</p>
+          <canvas id="sentimentChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- ===== Word Repetition Analysis ===== -->
+      <div class="card">
+        <div class="card-header">Word Repetition Analysis</div>
+        <div class="card-content">
+          <ul id="wordRepetitionList"></ul>
+          <canvas id="wordChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- ===== Analysis Summary ===== -->
+      <div class="card" id="analysis-summary">
+        <div class="card-header">Analysis Summary</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <strong>Overview:</strong>
+            <p id="overviewText">This content demonstrates moderate political bias but maintains factual accuracy.</p>
+          </div>
+          <div class="summary-block">
+            <strong>Reliability:</strong>
+            <p id="reliabilityText">Most sources appear trustworthy, with minor subjective language detected.</p>
+          </div>
+          <div class="summary-block">
+            <strong>Key Points:</strong>
+            <ul id="keyPointsList"></ul>
+          </div>
+          <div class="summary-block">
+            <strong>Recommendation:</strong>
+            <p id="recommendationText">Cross-check similar sources to confirm facts and reduce potential framing bias.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Feedback Section ===== -->
+      <div class="card">
+        <div class="card-header">Feedback</div>
+        <div class="card-content">
+          <p>Rate the accuracy of this analysis:</p>
+          <div class="feedback-stars" id="stars">
+            <span data-val="1">★</span>
+            <span data-val="2">★</span>
+            <span data-val="3">★</span>
+            <span data-val="4">★</span>
+            <span data-val="5">★</span>
+          </div>
+          <textarea id="feedbackText" rows="4" placeholder="Additional feedback..."></textarea>
+          <button id="feedbackBtn" class="analyze">Submit Feedback</button>
+          <p id="feedbackMsg" style="color:green; display:none;">Thanks for your feedback!</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
