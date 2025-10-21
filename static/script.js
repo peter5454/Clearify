@@ -146,6 +146,39 @@ function displayResults(result) {
     options: { responsive: true },
   });
 
+  // ----- Bias Detection -----
+  if (result.bias_analysis) {
+    const bias = result.bias_analysis;
+    document.getElementById("biasPrediction").textContent = bias.bias_prediction;
+    document.getElementById("biasConfidence").textContent = `${(bias.confidence * 100).toFixed(1)}%`;
+
+    // Bias Chart
+    if (window.biasChart instanceof Chart) {
+      window.biasChart.destroy();
+    }
+    const ctxBias = document.getElementById("biasChart").getContext("2d");
+    window.biasChart = new Chart(ctxBias, {
+      type: "bar",
+      data: {
+        labels: ["Left", "Center", "Right"],
+        datasets: [{
+          label: "Bias Confidence (%)",
+          data: [
+            bias.bias_prediction === "left" ? bias.confidence * 100 : 0,
+            bias.bias_prediction === "center" ? bias.confidence * 100 : 0,
+            bias.bias_prediction === "right" ? bias.confidence * 100 : 0
+          ],
+          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56"]
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } }
+      }
+    });
+  }
+
+
   // ----- Word Frequency Chart -----
   if (window.wordChart instanceof Chart) {
     window.wordChart.destroy();
