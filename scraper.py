@@ -6,15 +6,15 @@ nltk.download('punkt', quiet=True)
 
 #Integrating Newspaper3k 
 
-def scrape_article(url: str) -> dict:
-    """
-    Download, parse, and summarize an article using Newspaper3k.
-    Returns a dictionary with title, authors, publish date, text, summary, and keywords.
-    """
-    article = Article(url)
-    article.download()
-    article.parse()
-    article.nlp()
+def scrape_article(url):
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        return article.text
+    except Exception as e:
+        print(f"Scraper error: {e}")
+        return None
 
 def fetch_data():
     text = scrape_article()
