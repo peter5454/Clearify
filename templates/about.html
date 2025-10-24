@@ -8,26 +8,27 @@
   </head>
 
   <body class="bg-[#dff0f5] font-sans">
-    <!-- Top Bar (Centered Content) -->
-    <header
-      class="bg-white shadow-md flex flex-col items-center justify-center py-5 font-bold"
-    >
-      <div class="flex flex-col md:flex-row items-center gap-60">
-        <h1
-          class="text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400"
-        >
-          Clearify
-        </h1>
-        <a href="#" class="text-black text-xl">About Us</a>
+    <!-- Top Bar -->
+    <header class="bg-white shadow-md py-5 font-bold">
+      <div class="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center md:justify-between gap-6">
+        <!-- Clickable brand -> back to main page -->
+        <a href="{{ url_for('home') }}" aria-label="Go to Clearify home" class="inline-flex items-center group">
+          <span class="text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400 group-hover:from-blue-700 group-hover:to-sky-500 transition-colors">
+            Clearify
+          </span>
+        </a>
+
+        <!-- Right-side nav -->
+        <a href="#" class="text-black text-xl hover:opacity-80 transition-opacity">
+          About Us
+        </a>
       </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex flex-col items-center text-center mt-16 px-4">
       <!-- Title -->
-      <h2
-        class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400"
-      >
+      <h2 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400">
         Clearify
       </h2>
       <p class="text-lg mt-2 mb-10 text-gray-800">
@@ -35,9 +36,7 @@
       </p>
 
       <!-- Our Mission -->
-      <section
-        class="bg-white border border-black rounded-xl w-full max-w-3xl mb-12 shadow-sm"
-      >
+      <section class="bg-white border border-black rounded-xl w-full max-w-3xl mb-12 shadow-sm">
         <div class="bg-[#74d3ae] rounded-t-xl py-2 px-4 text-left">
           <h3 class="font-medium text-lg text-black">Our Mission</h3>
         </div>
