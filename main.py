@@ -2,41 +2,40 @@ from flask import Flask, render_template, request, jsonify
 from scraper import scrape_article
 from spacyanalyzer import extract_entities, analyze_sentiment, full_analysis
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from Dbias.bias_classification import classifier
 import torch
+import torch.nn.functional as F
 
 app = Flask(__name__)
 
-# ----------------------------
-# MODEL PATHS
-# ----------------------------
+# ============================================================
+# MODEL CONFIGURATION
+# ============================================================
 POLITICAL_MODEL_PATH = "bias_model"
 SBIC_MODEL_PATH = "sbic_model"
+FAKE_NEWS_MODEL_PATH = "fake_news_model"
 
-# ----------------------------
-# LOAD MODELS & TOKENIZERS
-# ----------------------------
-# Political bias model
-political_tokenizer = AutoTokenizer.from_pretrained(POLITICAL_MODEL_PATH)
-political_model = AutoModelForSequenceClassification.from_pretrained(POLITICAL_MODEL_PATH)
-
-# SBIC bias-category model
-sbic_tokenizer = AutoTokenizer.from_pretrained(SBIC_MODEL_PATH)
-sbic_model = AutoModelForSequenceClassification.from_pretrained(SBIC_MODEL_PATH)
-
-# ----------------------------
-# DEVICE CONFIGURATION
-# ----------------------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-political_model.to(device)
-sbic_model.to(device)
 
-political_model.eval()
-sbic_model.eval()
+# ============================================================
+# LOAD MODELS & TOKENIZERS
+# ============================================================
+def load_model_and_tokenizer(model_path):
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    model = AutoModelForSequenceClassification.from_pretrained(model_path)
+    model.to(device)
+    model.eval()
+    return tokenizer, model
 
-# ----------------------------
+# Load political and SBIC models
+political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL_PATH)
+#fake_news_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
+sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
+
+
+# ============================================================
 # LABEL MAPS
-# ----------------------------
-# Political orientation model
+# ============================================================
 political_label_map = {0: "left", 1: "center", 2: "right"}
 
 sbic_label_map = {
@@ -50,16 +49,86 @@ sbic_label_map = {
     7: "victim"
 }
 
-# ----------------------------
-# MAIN PAGE
-# ----------------------------
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+def get_dbias_score(text):
+    """
+    Returns bias intensity score (0–100) using Dbias classifier.
+    """
+    result = classifier(text)  # returns list of dicts [{'label': ..., 'score': ...}]
+    label = result[0]['label']      # 'Biased' or 'Unbiased'
+    confidence = result[0]['score'] # float between 0 and 1
+
+    # Convert confidence to 0–100 scale
+    if label.lower() == "biased":
+        score = confidence * 100
+    else:
+        score = (1 - confidence) * 100
+
+    return round(score, 2)
+
+
+
+def analyze_political_bias(text):
+    inputs = political_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+
+    with torch.no_grad():
+        outputs = political_model(**inputs)
+        probs = F.softmax(outputs.logits, dim=-1)
+        pred_label = torch.argmax(probs, dim=1).item()
+
+    return {
+        "prediction": political_label_map[pred_label],
+        "confidence": round(probs[0][pred_label].item(), 3)
+    }
+
+
+def analyze_social_bias(text):
+    inputs = sbic_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+
+    with torch.no_grad():
+        outputs = sbic_model(**inputs)
+        probs = F.softmax(outputs.logits, dim=-1)
+        pred_label = torch.argmax(probs, dim=1).item()
+
+    return {
+        "bias_category": sbic_label_map[pred_label],
+        "confidence": round(probs[0][pred_label].item(), 3)
+    }
+
+def analyze_fake_news(text):
+    """Return fake news probability as 0-100 scale."""
+    inputs = fake_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+    
+    with torch.no_grad():
+        outputs = fake_model(**inputs)
+        probs = F.softmax(outputs.logits, dim=-1)
+        pred_label = torch.argmax(probs, dim=1).item()
+        confidence = probs[0][pred_label].item()
+    
+    # Assume label 1 = Fake, 0 = Real
+    if pred_label == 1:
+        score = confidence * 100
+    else:
+        score = (1 - confidence) * 100
+
+    return round(score, 2)
+
+# ============================================================
+# ROUTES
+# ============================================================
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# ----------------------------
-# ANALYSIS ENDPOINT
-# ----------------------------
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     input_type = request.form.get('input_type')
@@ -68,7 +137,7 @@ def analyze():
     if not user_input or not input_type:
         return jsonify({"error": "No input data provided."}), 400
 
-    # Handle Text or URL input
+    # Handle text or URL input
     if input_type == 'text':
         text = user_input
     elif input_type == 'url':
@@ -82,51 +151,27 @@ def analyze():
         return jsonify({"error": "Empty text provided."}), 400
 
     # ----------------------------
-    # NLP & SENTIMENT
+    # NLP ANALYSIS
     # ----------------------------
     entities = extract_entities(text)
     sentiment_score, sentiment_label = analyze_sentiment(text)
     results = full_analysis(text)
 
     # ----------------------------
-    # POLITICAL BIAS MODEL
+    # MODEL INFERENCES
     # ----------------------------
-    pol_inputs = political_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    pol_inputs = {k: v.to(device) for k, v in pol_inputs.items()}
-
-    with torch.no_grad():
-        pol_outputs = political_model(**pol_inputs)
-        pol_probs = torch.nn.functional.softmax(pol_outputs.logits, dim=-1)
-        pol_pred_label = torch.argmax(pol_probs, dim=1).item()
-
-    political_result = {
-        "prediction": political_label_map[pol_pred_label],
-        "confidence": round(pol_probs[0][pol_pred_label].item(), 3)
-    }
+    political_result = analyze_political_bias(text)
+    sbic_result = analyze_social_bias(text)
+    bias_score = get_dbias_score(text)
+    #fake_news_score = analyze_fake_news(text)
 
     # ----------------------------
-    # SBIC SOCIAL BIAS MODEL
-    # ----------------------------
-    sbic_inputs = sbic_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    sbic_inputs = {k: v.to(device) for k, v in sbic_inputs.items()}
-
-    with torch.no_grad():
-        sbic_outputs = sbic_model(**sbic_inputs)
-        sbic_probs = torch.nn.functional.softmax(sbic_outputs.logits, dim=-1)
-        sbic_pred_label = torch.argmax(sbic_probs, dim=1).item()
-
-    sbic_result = {
-        "bias_category": sbic_label_map[sbic_pred_label],
-        "confidence": round(sbic_probs[0][sbic_pred_label].item(), 3)
-    }
-
-    # ----------------------------
-    # FINAL COMBINED OUTPUT
+    # COMBINED OUTPUT
     # ----------------------------
     final_result = {
         "words_analyzed": len(text.split()),
-        "bias_score": 50,  # placeholder
-        "fake_news_risk": 20,  # placeholder
+        "bias_score": bias_score,
+        "fake_news_risk": 11,  # placeholder
         "domain_data_score": 72,
         "user_computer_data": 28,
         "emotional_words_percentage": 12,
@@ -146,16 +191,13 @@ def analyze():
     return jsonify(final_result)
 
 
-# ----------------------------
-# ABOUT PAGE
-# ----------------------------
 @app.route('/about')
 def about():
     return render_template('about.html')
 
 
-# ----------------------------
+# ============================================================
 # RUN APP
-# ----------------------------
+# ============================================================
 if __name__ == "__main__":
     app.run(debug=True)
