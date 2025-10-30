@@ -6,16 +6,49 @@ import torch
 
 app = Flask(__name__)
 
-MODEL_PATH = "bias_model"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
-model.eval()
+# ----------------------------
+# MODEL PATHS
+# ----------------------------
+POLITICAL_MODEL_PATH = "bias_model"
+SBIC_MODEL_PATH = "sbic_model"
 
+# ----------------------------
+# LOAD MODELS & TOKENIZERS
+# ----------------------------
+# Political bias model
+political_tokenizer = AutoTokenizer.from_pretrained(POLITICAL_MODEL_PATH)
+political_model = AutoModelForSequenceClassification.from_pretrained(POLITICAL_MODEL_PATH)
+
+# SBIC bias-category model
+sbic_tokenizer = AutoTokenizer.from_pretrained(SBIC_MODEL_PATH)
+sbic_model = AutoModelForSequenceClassification.from_pretrained(SBIC_MODEL_PATH)
+
+# ----------------------------
+# DEVICE CONFIGURATION
+# ----------------------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+political_model.to(device)
+sbic_model.to(device)
 
-# Label mapping (reverse of training)
-label_map = {0: "left", 1: "center", 2: "right"}
+political_model.eval()
+sbic_model.eval()
+
+# ----------------------------
+# LABEL MAPS
+# ----------------------------
+# Political orientation model
+political_label_map = {0: "left", 1: "center", 2: "right"}
+
+sbic_label_map = {
+    0: "none",
+    1: "race",
+    2: "gender",
+    3: "social",
+    4: "body",
+    5: "culture",
+    6: "disabled",
+    7: "victim"
+}
 
 # ----------------------------
 # MAIN PAGE
@@ -23,7 +56,6 @@ label_map = {0: "left", 1: "center", 2: "right"}
 @app.route('/')
 def home():
     return render_template('index.html')
-
 
 # ----------------------------
 # ANALYSIS ENDPOINT
@@ -36,7 +68,7 @@ def analyze():
     if not user_input or not input_type:
         return jsonify({"error": "No input data provided."}), 400
 
-    # Handle Text or URL
+    # Handle Text or URL input
     if input_type == 'text':
         text = user_input
     elif input_type == 'url':
@@ -46,33 +78,51 @@ def analyze():
     else:
         return jsonify({"error": "Invalid analysis type."}), 400
 
-    # Safety check
-    if not text or text.strip() == "":
+    if not text.strip():
         return jsonify({"error": "Empty text provided."}), 400
 
-   # ----------------------------
-    # NLP + BIAS MODEL PREDICTION
     # ----------------------------
-    # Run spaCy-based analysis
+    # NLP & SENTIMENT
+    # ----------------------------
     entities = extract_entities(text)
     sentiment_score, sentiment_label = analyze_sentiment(text)
     results = full_analysis(text)
 
-    # Run transformer-based bias prediction
-    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    inputs = {k: v.to(device) for k, v in inputs.items()}
+    # ----------------------------
+    # POLITICAL BIAS MODEL
+    # ----------------------------
+    pol_inputs = political_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    pol_inputs = {k: v.to(device) for k, v in pol_inputs.items()}
 
     with torch.no_grad():
-        outputs = model(**inputs)
-        predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
-        pred_label = torch.argmax(predictions, dim=1).item()
+        pol_outputs = political_model(**pol_inputs)
+        pol_probs = torch.nn.functional.softmax(pol_outputs.logits, dim=-1)
+        pol_pred_label = torch.argmax(pol_probs, dim=1).item()
 
-    bias_result = {
-        "bias_prediction": label_map[pred_label],
-        "confidence": round(predictions[0][pred_label].item(), 3)
+    political_result = {
+        "prediction": political_label_map[pol_pred_label],
+        "confidence": round(pol_probs[0][pol_pred_label].item(), 3)
     }
 
-    # Combine all results
+    # ----------------------------
+    # SBIC SOCIAL BIAS MODEL
+    # ----------------------------
+    sbic_inputs = sbic_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    sbic_inputs = {k: v.to(device) for k, v in sbic_inputs.items()}
+
+    with torch.no_grad():
+        sbic_outputs = sbic_model(**sbic_inputs)
+        sbic_probs = torch.nn.functional.softmax(sbic_outputs.logits, dim=-1)
+        sbic_pred_label = torch.argmax(sbic_probs, dim=1).item()
+
+    sbic_result = {
+        "bias_category": sbic_label_map[sbic_pred_label],
+        "confidence": round(sbic_probs[0][sbic_pred_label].item(), 3)
+    }
+
+    # ----------------------------
+    # FINAL COMBINED OUTPUT
+    # ----------------------------
     final_result = {
         "words_analyzed": len(text.split()),
         "bias_score": 50,  # placeholder
@@ -82,18 +132,18 @@ def analyze():
         "emotional_words_percentage": 12,
         "source_reliability": "High",
         "framing_perspective": "Neutral",
-        "positive_sentiment": int(sentiment_score*100 if sentiment_label=='positive' else 50),
-        "negative_sentiment": int(sentiment_score*100 if sentiment_label=='negative' else 50),
+        "positive_sentiment": int(sentiment_score * 100 if sentiment_label == 'positive' else 50),
+        "negative_sentiment": int(sentiment_score * 100 if sentiment_label == 'negative' else 50),
         "word_repetition": [{"word": w, "count": 1} for w in text.split()[:5]],
         "overview": results.get("overview", ""),
         "reliability": results.get("reliability", ""),
         "recommendation": results.get("recommendation", ""),
         "overall_tone": results.get("overall_tone", ""),
-        "bias_analysis": bias_result
+        "political_analysis": political_result,
+        "social_bias_analysis": sbic_result,
     }
 
     return jsonify(final_result)
-
 
 
 # ----------------------------
