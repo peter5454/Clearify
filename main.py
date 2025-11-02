@@ -29,7 +29,7 @@ def load_model_and_tokenizer(model_path):
 
 # Load political and SBIC models
 political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL_PATH)
-#fake_news_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
+fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
 sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
 
 
@@ -108,7 +108,7 @@ def analyze_fake_news(text):
     ).to(device)
     
     with torch.no_grad():
-        outputs = fake_model(**inputs)
+        outputs = fake_news_model(**inputs)
         probs = F.softmax(outputs.logits, dim=-1)
         pred_label = torch.argmax(probs, dim=1).item()
         confidence = probs[0][pred_label].item()
@@ -163,7 +163,7 @@ def analyze():
     political_result = analyze_political_bias(text)
     sbic_result = analyze_social_bias(text)
     bias_score = get_dbias_score(text)
-    #fake_news_score = analyze_fake_news(text)
+    fake_news_score = analyze_fake_news(text)
 
     # ----------------------------
     # COMBINED OUTPUT
@@ -171,7 +171,7 @@ def analyze():
     final_result = {
         "words_analyzed": len(text.split()),
         "bias_score": bias_score,
-        "fake_news_risk": 11,  # placeholder
+        "fake_news_risk": fake_news_score,  # placeholder
         "domain_data_score": 72,
         "user_computer_data": 28,
         "emotional_words_percentage": 12,
