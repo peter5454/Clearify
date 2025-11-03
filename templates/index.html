@@ -115,6 +115,43 @@
           <canvas id="sentimentChart" width="400" height="200"></canvas>
         </div>
       </div>
+      <!-- ===== Political & Social Bias Analysis ===== -->
+      <div class="card">
+        <div class="card-header">Political & Social Bias</div>
+        <div class="card-content grid-2">
+          <!-- Political -->
+          <div class="analysis-card">
+            <h3>Political Leaning</h3>
+            <p class="muted">Model prediction</p>
+            <div class="analysis-main">
+              <div class="label-big" id="politicalLabel">—</div>
+              <div class="muted small" id="politicalText">Confidence: <span id="politicalConfidence">0%</span></div>
+
+              <div class="progress" aria-hidden="true">
+                <div id="politicalProgress" class="progress-inner" style="width:0%"></div>
+              </div>
+
+              <p class="muted tiny" id="politicalNote">Prediction sources: model</p>
+            </div>
+          </div>
+
+          <!-- Social Bias -->
+          <div class="analysis-card">
+            <h3>Social Bias Category</h3>
+            <p class="muted">SBIC model prediction</p>
+            <div class="analysis-main">
+              <div class="label-big" id="socialLabel">—</div>
+              <div class="muted small" id="socialText">Confidence: <span id="socialConfidence">0%</span></div>
+
+              <div class="progress" aria-hidden="true">
+                <div id="socialProgress" class="progress-inner" style="width:0%"></div>
+              </div>
+
+              <p class="muted tiny" id="socialNote">Categories: race, gender, social, etc.</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ===== Word Repetition Analysis ===== -->
       <div class="card">

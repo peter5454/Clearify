@@ -50,12 +50,33 @@ def get_dbias_score(text: str) -> float:
     """
     Returns bias intensity score (0–100) using Dbias classifier.
     """
-    result = classifier(text)
-    label = result[0]['label']
-    confidence = result[0]['score']
+    try:
+        # Import the tokenizer used by the classifier
+        from Dbias.bias_classification import tokenizer as dbias_tokenizer
+        
+        # Tokenize manually to check token count
+        tokens = dbias_tokenizer(
+            text,
+            truncation=True,
+            max_length=512,  # TF DistilBERT limit
+            return_tensors="tf"
+        )
+        
+        # Decode back truncated tokens into safe text
+        safe_text = dbias_tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
+        
+        # Run classifier safely
+        result = classifier(safe_text)
+        print (result)
+        label = result[0]['label']
+        confidence = result[0]['score']
 
-    score = confidence * 100 if label.lower() == "biased" else (1 - confidence) * 100
-    return round(score, 2)
+        score = confidence * 100
+        return round(score, 2), label
+
+    except Exception as e:
+        print(f"[Dbias Error] {e}")
+        return 0.0
 
 def analyze_political_bias(text: str) -> dict:
     inputs = political_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
