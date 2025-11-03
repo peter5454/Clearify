@@ -83,30 +83,51 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 // DISPLAY RESULTS FUNCTION
 // ========================================================
 function displayResults(result) {
+  // ----- Support different bias_score shapes -----
+  // backend may return bias_score as number or as [score,label]
+  let biasScoreNum = 0;
+  let dbiasLabel = "unknown";
+  if (Array.isArray(result.bias_score)) {
+    biasScoreNum = result.bias_score[0];
+    dbiasLabel = result.bias_score[1] || "unknown";
+  } else if (typeof result.bias_score === "number") {
+    biasScoreNum = result.bias_score;
+  } else {
+    // If nested like {score:..., label:...}
+    if (result.bias_score && typeof result.bias_score === "object") {
+      biasScoreNum = result.bias_score.score || 0;
+      dbiasLabel = result.bias_score.label || "unknown";
+    }
+  }
+
   // ----- Basic Overview -----
-  document.getElementById("wordsAnalyzed").textContent = result.words_analyzed;
-  document.getElementById("biasScore").textContent = `Bias: ${result.bias_score}%`;
-  document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${result.fake_news_risk}%`;
+  document.getElementById("wordsAnalyzed").textContent = result.words_analyzed ?? 0;
+  document.getElementById("biasScore").textContent = `Bias: ${Math.round(biasScoreNum)}%`;
+  // show dbias label appended as small text (optional)
+  // If you want to show label near the bias score:
+  // document.getElementById("biasScore").textContent += ` (${dbiasLabel})`;
+
+  document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${result.fake_news_risk ?? 0}%`;
 
   // ----- Domain Data -----
-  document.getElementById("reliableScore").textContent = `${result.domain_data_score}% Reliable devices`;
-  document.getElementById("redFlagScore").textContent = `${result.user_computer_data}% Red flags`;
+  document.getElementById("reliableScore").textContent = `${result.domain_data_score ?? 0}% Reliable devices`;
+  document.getElementById("redFlagScore").textContent = `${result.user_computer_data ?? 0}% Red flags`;
 
   // ----- Language and Tone -----
-  document.getElementById("emotionalWords").textContent = `${result.emotional_words_percentage}%`;
-  document.getElementById("sourceReliability").textContent = result.source_reliability;
-  document.getElementById("framingPerspective").textContent = result.framing_perspective;
+  document.getElementById("emotionalWords").textContent = `${result.emotional_words_percentage ?? 0}%`;
+  document.getElementById("sourceReliability").textContent = result.source_reliability ?? "Unknown";
+  document.getElementById("framingPerspective").textContent = result.framing_perspective ?? "—";
 
   // ----- Sentiment -----
-  document.getElementById("positiveSentiment").textContent = `${result.positive_sentiment}%`;
-  document.getElementById("negativeSentiment").textContent = `${result.negative_sentiment}%`;
+  document.getElementById("positiveSentiment").textContent = `${result.positive_sentiment ?? 0}%`;
+  document.getElementById("negativeSentiment").textContent = `${result.negative_sentiment ?? 0}%`;
 
   // ----- Word Repetition -----
   const wordList = document.getElementById("wordRepetitionList");
   wordList.innerHTML = "";
-  result.word_repetition.forEach((wordData) => {
+  (result.word_repetition || []).forEach((wordData) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${wordData.word}:</strong> ${wordData.count} occurrences`;
+    li.innerHTML = `<strong>${wordData.word}:</strong> ${wordData.count} occurrence${wordData.count === 1 ? "" : "s"}`;
     wordList.appendChild(li);
   });
 
@@ -121,12 +142,12 @@ function displayResults(result) {
   // ----- Key Points -----
   const keyPointsList = document.getElementById("keyPointsList");
   keyPointsList.innerHTML = `
-    <li>Emotionally charged words: <b>${result.emotional_words_percentage}%</b></li>
-    <li>Source reliability: <b>${result.source_reliability}</b></li>
-    <li>Overall tone: <b>${result.overall_tone}</b></li>
+    <li>Emotionally charged words: <b>${result.emotional_words_percentage ?? 0}%</b></li>
+    <li>Source reliability: <b>${result.source_reliability ?? "Unknown"}</b></li>
+    <li>Overall tone: <b>${result.overall_tone ?? "Unknown"}</b></li>
   `;
 
-  // ----- Sentiment Chart -----
+  // ----- Sentiment Chart (unchanged) -----
   if (window.sentimentChart instanceof Chart) {
     window.sentimentChart.destroy();
   }
@@ -138,7 +159,7 @@ function displayResults(result) {
       datasets: [
         {
           label: "Sentiment Distribution",
-          data: [result.positive_sentiment, result.negative_sentiment],
+          data: [result.positive_sentiment ?? 0, result.negative_sentiment ?? 0],
           backgroundColor: ["#4CAF50", "#F44336"],
         },
       ],
@@ -146,13 +167,13 @@ function displayResults(result) {
     options: { responsive: true },
   });
 
-  // ----- Word Frequency Chart -----
+  // ----- Word Frequency Chart (unchanged) -----
   if (window.wordChart instanceof Chart) {
     window.wordChart.destroy();
   }
   const ctxWord = document.getElementById("wordChart");
-  const labels = result.word_repetition.map((w) => w.word);
-  const counts = result.word_repetition.map((w) => w.count);
+  const labels = (result.word_repetition || []).map((w) => w.word);
+  const counts = (result.word_repetition || []).map((w) => w.count);
   window.wordChart = new Chart(ctxWord, {
     type: "pie",
     data: {
@@ -166,7 +187,47 @@ function displayResults(result) {
     },
     options: { responsive: true },
   });
+
+  // ----- Political Analysis (new) -----
+  // political_result expected: { prediction: "left"|"center"|"right", confidence: 0.### }
+  const pol = result.political_analysis || {};
+  const polPred = pol.prediction ? String(pol.prediction).toUpperCase() : "UNKNOWN";
+  const polConf = typeof pol.confidence === "number" ? Math.round(pol.confidence * 100) : (pol.confidence || 0);
+
+  document.getElementById("politicalLabel").textContent = polPred;
+  document.getElementById("politicalConfidence").textContent = `${polConf}%`;
+  const polProg = document.getElementById("politicalProgress");
+  polProg.style.width = `${polConf}%`;
+  // color tweak for common labels:
+  polProg.classList.remove("right","center");
+  if ((pol.prediction || "").toLowerCase() === "right") polProg.classList.add("right");
+  if ((pol.prediction || "").toLowerCase() === "center") polProg.classList.add("center");
+
+  // Optionally show predicted label near the top of summary or key points
+  // add to keypoints
+  keyPointsList.insertAdjacentHTML("beforeend", `<li>Political leaning: <b>${polPred} (${polConf}%)</b></li>`);
+
+  // ----- Social Bias Analysis (new) -----
+  // sbic_result expected: { bias_category: "race"|"gender"|..., confidence: 0.### }
+  const sb = result.social_bias_analysis || {};
+  const sbPred = sb.bias_category ? String(sb.bias_category) : "none";
+  const sbConf = typeof sb.confidence === "number" ? Math.round(sb.confidence * 100) : (sb.confidence || 0);
+
+  document.getElementById("socialLabel").textContent = sbPred.replace(/^\w/, (c) => c.toUpperCase());
+  document.getElementById("socialConfidence").textContent = `${sbConf}%`;
+  const sbProg = document.getElementById("socialProgress");
+  sbProg.style.width = `${sbConf}%`;
+
+  // add to keypoints
+  keyPointsList.insertAdjacentHTML("beforeend", `<li>Social bias: <b>${sbPred} (${sbConf}%)</b></li>`);
+
+  // Show results section if hidden
+  const resultsDiv = document.getElementById("results");
+  if (resultsDiv && resultsDiv.style.display === "none") {
+    resultsDiv.style.display = "block";
+  }
 }
+
 
 // ========================================================
 // MOCK RESULTS FOR FALLBACK
