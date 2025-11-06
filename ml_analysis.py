@@ -2,13 +2,17 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from Dbias.bias_classification import classifier
-
+from transformers import AutoConfig
 # ============================================================
 # MODEL CONFIGURATION
 # ============================================================
 POLITICAL_MODEL_PATH = "bias_model"
 SBIC_MODEL_PATH = "sbic_model"
 FAKE_NEWS_MODEL_PATH = "fake_news_model"
+
+cfg = AutoConfig.from_pretrained(POLITICAL_MODEL_PATH)
+print("config.id2label:", getattr(cfg, "id2label", None))
+print("config.label2id:", getattr(cfg, "label2id", None))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,7 +34,7 @@ sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
 # ============================================================
 # LABEL MAPS
 # ============================================================
-political_label_map = {0: "left", 1: "center", 2: "right"}
+political_label_map = {0: "right", 1: "center", 2: "left"}
 
 sbic_label_map = {
     0: "none",
