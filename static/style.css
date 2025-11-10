@@ -320,6 +320,11 @@ th {
 /* make sure text fits */
 .analysis-main { width: 100%; }
 
+.gemini-summary-card {
+  border-left: 4px solid var(--accent-blue-1);
+}
+
+
 /* Small responsive adjustments */
 @media (max-width: 900px) {
   header { padding: 1rem 2rem; }
@@ -335,3 +340,42 @@ th {
 
 /* tiny helpers to ensure consistent spacing */
 .card .analysis-card + .analysis-card { margin-top: 0.5rem; }
+
+.spectrumBar {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(
+    to right,
+    #4f46e5 0%,
+    #9ca3af 50%,
+    #dc2626 100%
+  );
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.spectrumMarker {
+  position: absolute;
+  top: -4px;
+  width: 10px;
+  height: 20px;
+  background: #000;
+  border-radius: 2px;
+  transition: left 0.4s ease;
+}
+
+.spectrumLegend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.spectrumLabel {
+  text-align: center;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 4px;
+}
+

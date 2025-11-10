@@ -153,35 +153,52 @@
         </div>
       </div>
 
+            <!-- ===== Gemini Summary ===== -->
+      <div class="card" id="gemini-summary-card" style="display:none;">
+        <div class="card-header">AI Summary</div>
+        <div class="card-content">
+          <div class="summary-block">
+            <strong>Overall Summary:</strong>
+            <p id="geminiOverall">—</p>
+          </div>
+          <div class="summary-block">
+            <strong>Political Bias Summary:</strong>
+            <p id="geminiPolitical">—</p>
+          </div>
+          <div class="summary-block">
+            <strong>Social Bias Summary:</strong>
+            <p id="geminiSocial">—</p>
+          </div>
+          <div class="summary-block">
+            <strong>Fake News Summary:</strong>
+            <p id="geminiFakeNews">—</p>
+          </div>
+          <div class="summary-block">
+            <strong>Final Verdict:</strong>
+            <p id="geminiVerdict">—</p>
+          </div>
+
+          <div class="summary-block">
+            <strong>Political Spectrum Position:</strong>
+            <div id="spectrumBar" class="spectrumBar">
+              <div id="spectrumMarker" class="spectrumMarker"></div>
+            </div>
+            <div id="spectrumLegend" class="spectrumLegend">
+              <span>Left</span>
+              <span>Center</span>
+              <span>Right</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       <!-- ===== Word Repetition Analysis ===== -->
       <div class="card">
         <div class="card-header">Word Repetition Analysis</div>
         <div class="card-content">
           <ul id="wordRepetitionList"></ul>
           <canvas id="wordChart" width="400" height="200"></canvas>
-        </div>
-      </div>
-
-      <!-- ===== Analysis Summary ===== -->
-      <div class="card" id="analysis-summary">
-        <div class="card-header">Analysis Summary</div>
-        <div class="card-content">
-          <div class="summary-block">
-            <strong>Overview:</strong>
-            <p id="overviewText">This content demonstrates moderate political bias but maintains factual accuracy.</p>
-          </div>
-          <div class="summary-block">
-            <strong>Reliability:</strong>
-            <p id="reliabilityText">Most sources appear trustworthy, with minor subjective language detected.</p>
-          </div>
-          <div class="summary-block">
-            <strong>Key Points:</strong>
-            <ul id="keyPointsList"></ul>
-          </div>
-          <div class="summary-block">
-            <strong>Recommendation:</strong>
-            <p id="recommendationText">Cross-check similar sources to confirm facts and reduce potential framing bias.</p>
-          </div>
         </div>
       </div>
 

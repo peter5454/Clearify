@@ -131,21 +131,6 @@ function displayResults(result) {
     wordList.appendChild(li);
   });
 
-  // ----- Summary Sections -----
-  document.getElementById("overviewText").textContent =
-    result.overview || "This content demonstrates moderate political bias but maintains factual accuracy.";
-  document.getElementById("reliabilityText").textContent =
-    result.reliability || "Most sources appear trustworthy, with minor subjective language detected.";
-  document.getElementById("recommendationText").textContent =
-    result.recommendation || "Cross-check similar sources to confirm facts and reduce potential framing bias.";
-
-  // ----- Key Points -----
-  const keyPointsList = document.getElementById("keyPointsList");
-  keyPointsList.innerHTML = `
-    <li>Emotionally charged words: <b>${result.emotional_words_percentage ?? 0}%</b></li>
-    <li>Source reliability: <b>${result.source_reliability ?? "Unknown"}</b></li>
-    <li>Overall tone: <b>${result.overall_tone ?? "Unknown"}</b></li>
-  `;
 
   // ----- Sentiment Chart (unchanged) -----
   if (window.sentimentChart instanceof Chart) {
@@ -203,9 +188,6 @@ function displayResults(result) {
   if ((pol.prediction || "").toLowerCase() === "right") polProg.classList.add("right");
   if ((pol.prediction || "").toLowerCase() === "center") polProg.classList.add("center");
 
-  // Optionally show predicted label near the top of summary or key points
-  // add to keypoints
-  keyPointsList.insertAdjacentHTML("beforeend", `<li>Political leaning: <b>${polPred} (${polConf}%)</b></li>`);
 
   // ----- Social Bias Analysis (new) -----
   // sbic_result expected: { bias_category: "race"|"gender"|..., confidence: 0.### }
@@ -218,15 +200,60 @@ function displayResults(result) {
   const sbProg = document.getElementById("socialProgress");
   sbProg.style.width = `${sbConf}%`;
 
-  // add to keypoints
-  keyPointsList.insertAdjacentHTML("beforeend", `<li>Social bias: <b>${sbPred} (${sbConf}%)</b></li>`);
-
   // Show results section if hidden
   const resultsDiv = document.getElementById("results");
   if (resultsDiv && resultsDiv.style.display === "none") {
     resultsDiv.style.display = "block";
   }
+    // ----- Gemini summary integration (if available) -----
+  const geminiCard = document.getElementById("gemini-summary-card");
+  const gemini = result.gemini_summary || null;
+
+  if (gemini && typeof gemini === "object") {
+    // Show card
+    geminiCard.style.display = "block";
+
+    document.getElementById("geminiOverall").textContent =
+      gemini.overall_summary || "No overall summary available.";
+    document.getElementById("geminiPolitical").textContent =
+      gemini.political_bias_summary || "No political summary.";
+    document.getElementById("geminiSocial").textContent =
+      gemini.social_bias_summary || "No social summary.";
+    document.getElementById("geminiFakeNews").textContent =
+      gemini.fake_news_summary || "No fake-news summary.";
+    document.getElementById("geminiVerdict").textContent =
+      gemini.final_verdict || "No final verdict.";
+    // ---- Spectrum graph for final verdict ----
+    const verdict = (gemini.final_verdict || "").toLowerCase();
+    const spectrumMarker = document.getElementById("spectrumMarker");
+
+    // Default position (center)
+    let position = 50;
+    let label = "Center";
+
+    if (verdict.includes("left")) {
+      position = 15;
+      label = "Left";
+    } else if (verdict.includes("right")) {
+      position = 85;
+      label = "Right";
+    } else if (verdict.includes("center") || verdict.includes("neutral")) {
+      position = 50;
+      label = "Center";
+    }
+    spectrumMarker.style.left = `calc(${position}% - 5px)`;
+
+
+  } else if (typeof gemini === "string" && gemini.trim()) {
+    geminiCard.style.display = "block";
+    document.getElementById("geminiOverall").textContent = gemini;
+  } else {
+    geminiCard.style.display = "none";
+  }
 }
+
+  
+
 
 
 // ========================================================
@@ -253,6 +280,10 @@ function displayMockResults() {
     overview: "This content demonstrates moderate political bias but maintains factual accuracy.",
     reliability: "Most sources appear trustworthy, with minor subjective language detected.",
     recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias.",
+    overview: "This content demonstrates moderate political bias but maintains factual accuracy.",
+    reliability: "Most sources appear trustworthy, with minor subjective language detected.",
+    recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias.",
+
   };
 
   displayResults(mockResult);

@@ -10,6 +10,9 @@ from ml_analysis import (
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+import json
+import re
+
 
 
 load_dotenv(dotenv_path="key.env")
@@ -30,22 +33,28 @@ def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_sc
     # --- Political model ---
     p_label = political["prediction"]
     p_conf = political["confidence"]
-    votes[p_label] += p_conf * 1.0  # weight = 1
+    votes[p_label] += p_conf
 
     # --- Social bias heuristic ---
     if social["bias_category"] in ["race", "gender", "social", "culture"]:
-        votes["left"] += 0.3  # progressive bias often correlates with left stance
+        # Indicates a socially sensitive topic → less neutral
+        votes["center"] -= 0.2
+        votes["left"] += 0.1
+        votes["right"] += 0.1
     else:
-        votes["center"] += 0.2  # neutral social
+        # No major social bias detected → slightly more neutral
+        votes["center"] += 0.2
+
 
     # --- Dbias ---
-    if dbias_score > 60:  # high bias score
+    if dbias_score > 60:  # content shows notable bias
         if dbias_score < 75:
-            votes["center"] += 0.5
+            votes["center"] += 0.5  # moderately biased → lean toward center (unclear side)
         else:
-            # extremely biased, use label polarity
-            if dbias_score > 80:
-                votes["right"] += 0.5
+            # extremely biased, reduce neutrality
+            votes["center"] -= 0.3
+            votes["left"] += 0.2
+            votes["right"] += 0.2
 
     # --- Fake news heuristic ---
     if fake_news > 70:
@@ -63,18 +72,11 @@ def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_sc
     return final_verdict, votes
 
 
-def summarize_clearify_results(text: str):
-    # Run models
-    political = analyze_political_bias(text)
-    social = analyze_social_bias(text)
-    fake_news = analyze_fake_news(text)
-    dbias_score, dbias_label = get_dbias_score(text)
-    sentiment_score, sentiment_label = analyze_sentiment(text)
-
+def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label, sentiment_score, sentiment_label):
     # Derive final verdict combining all signals
     final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score, sentiment_score)
 
-    # Build structured summary
+    # Build structured analysis object to pass into prompt
     analysis = {
         "input_text": text,
         "political_bias": political,
@@ -86,7 +88,6 @@ def summarize_clearify_results(text: str):
         "final_verdict": final_verdict
     }
 
-    # Use Gemini to create concise human-readable summary
     prompt = f"""
     You are an unbiased political content summarizer.
     Here is raw analysis data from Clearify (including weighted votes):
@@ -102,8 +103,49 @@ def summarize_clearify_results(text: str):
     Return in JSON format.
     """
 
+    # Call Gemini
     response = gemini_model.generate_content(prompt)
-    return response.text, final_verdict, votes
+    gemini_text = getattr(response, "text", "") or str(response)
+
+    # Try to parse JSON robustly
+    parsed = None
+    gemini_json_fallback = {
+        "overall_summary": None,
+        "political_bias_summary": None,
+        "social_bias_summary": None,
+        "fake_news_summary": None,
+        "final_verdict": final_verdict
+    }
+
+    # 1) Try direct JSON parse
+    try:
+        parsed = json.loads(gemini_text)
+    except Exception:
+        # 2) Try to find the first {...} JSON object substring
+        try:
+            match = re.search(r"(\{[\s\S]*\})", gemini_text)
+            if match:
+                parsed = json.loads(match.group(1))
+        except Exception:
+            parsed = None
+
+    if isinstance(parsed, dict):
+        # ensure keys exist and keep final_verdict consistent
+        gemini_summary = {
+            "overall_summary": parsed.get("overall_summary") or parsed.get("overallSummary") or parsed.get("summary"),
+            "political_bias_summary": parsed.get("political_bias_summary") or parsed.get("politicalBiasSummary"),
+            "social_bias_summary": parsed.get("social_bias_summary") or parsed.get("socialBiasSummary"),
+            "fake_news_summary": parsed.get("fake_news_summary") or parsed.get("fakeNewsSummary"),
+            "final_verdict": parsed.get("final_verdict") or final_verdict
+        }
+    else:
+        # If parsing failed, put the raw text into overall_summary for front-end display
+        gemini_summary = gemini_json_fallback.copy()
+        gemini_summary["overall_summary"] = gemini_text.strip()
+        gemini_summary["final_verdict"] = final_verdict
+
+    return gemini_summary, final_verdict, votes
+
 
 
 
@@ -136,7 +178,7 @@ def analyze():
     if not text.strip():
         return jsonify({"error": "Empty text provided."}), 400
 
-    # Run analyses
+    # ✅ Run all models once
     entities = extract_entities(text)
     sentiment_score, sentiment_label = analyze_sentiment(text)
     results = full_analysis(text)
@@ -144,34 +186,47 @@ def analyze():
     sbic_result = analyze_social_bias(text)
     bias_score, bias_label = get_dbias_score(text)
     fake_news_score = analyze_fake_news(text)
-    gemini_summary, final_verdict, votes = summarize_clearify_results(text)
+
+    # ✅ Pass results into summarizer (no re-runs)
+    # ... after computing entities, sentiment, results, political_result, sbic_result, bias_score, bias_label, fake_news_score
+    gemini_summary, final_verdict, votes = summarize_clearify_results(
+        text,
+        political_result,
+        sbic_result,
+        fake_news_score,
+        bias_score,
+        bias_label,
+        sentiment_score,
+        sentiment_label
+    )
 
     final_result = {
-    "words_analyzed": len(text.split()),
-    "bias_score": bias_score,
-    "bias_label": bias_label,
-    "fake_news_risk": fake_news_score,
-    "domain_data_score": 72,
-    "user_computer_data": 28,
-    "emotional_words_percentage": 12,
-    "source_reliability": "High",
-    "framing_perspective": "Neutral",
-    "positive_sentiment": int(sentiment_score * 100 if sentiment_label == 'Positive' else 50),
-    "negative_sentiment": int(sentiment_score * 100 if sentiment_label == 'Negative' else 50),
-    "word_repetition": [{"word": w, "count": 1} for w in text.split()[:5]],
-    "overview": results.get("overview", ""),
-    "reliability": results.get("reliability", ""),
-    "recommendation": results.get("recommendation", ""),
-    "overall_tone": results.get("overall_tone", ""),
-    "political_analysis": political_result,
-    "social_bias_analysis": sbic_result,
-    "final_verdict": final_verdict,
-    "weighted_votes": votes,
-    "gemini_summary": gemini_summary
+        "words_analyzed": len(text.split()),
+        "bias_score": bias_score,
+        "bias_label": bias_label,
+        "fake_news_risk": fake_news_score,
+        "domain_data_score": 72,
+        "user_computer_data": 28,
+        "emotional_words_percentage": 12,
+        "source_reliability": "High",
+        "framing_perspective": "Neutral",
+        "positive_sentiment": int(sentiment_score * 100 if sentiment_label == 'Positive' else 50),
+        "negative_sentiment": int(sentiment_score * 100 if sentiment_label == 'Negative' else 50),
+        "word_repetition": [{"word": w, "count": 1} for w in text.split()[:5]],
+        "overview": results.get("overview", ""),
+        "reliability": results.get("reliability", ""),
+        "recommendation": results.get("recommendation", ""),
+        "overall_tone": results.get("overall_tone", ""),
+        "political_analysis": political_result,
+        "social_bias_analysis": sbic_result,
+        "final_verdict": final_verdict,
+        "weighted_votes": votes,
+        "gemini_summary": gemini_summary
     }
 
-    print(summarize_clearify_results(text))
+
     return jsonify(final_result)
+
 
 
 
