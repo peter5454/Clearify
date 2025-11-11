@@ -12,6 +12,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import json
 import re
+from database import save_feedback
 
 
 
@@ -226,6 +227,19 @@ def analyze():
 
 
     return jsonify(final_result)
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    data = request.get_json()
+    rating = data.get('rating')
+    feedback_text = data.get('feedback_text', '')
+    submitted_text = data.get('submitted_text', '')
+
+    if not rating or not (1 <= int(rating) <= 5):
+        return jsonify({"error": "Invalid rating"}), 400
+
+    save_feedback(int(rating), feedback_text, submitted_text)
+    return jsonify({"message": "Feedback saved successfully!"})
 
 
 

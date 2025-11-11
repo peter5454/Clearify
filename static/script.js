@@ -288,27 +288,59 @@ function displayMockResults() {
 
   displayResults(mockResult);
 }
+//FEEDBACK / STAR RATING SYSTEM
+document.addEventListener("DOMContentLoaded", () => {
+  const stars = document.querySelectorAll("#stars span");
+  let rating = 0;
 
-// FEEDBACK SYSTEM
-const stars = document.querySelectorAll("#stars span");
-let rating = 0;
-
-stars.forEach((star) => {
-  star.addEventListener("click", () => {
-    rating = star.dataset.val;
-    stars.forEach((s) => {
-      s.classList.toggle("active", s.dataset.val <= rating);
+  stars.forEach((star) => {
+    star.addEventListener("click", () => {
+      rating = parseInt(star.dataset.val);
+      stars.forEach((s) => {
+        s.classList.toggle("active", parseInt(s.dataset.val) <= rating);
+      });
     });
+  });
+
+  // ===== FEEDBACK SUBMISSION =====
+  document.getElementById("feedbackBtn").addEventListener("click", async () => {
+    const feedbackText = document.getElementById("feedbackText").value;
+    const submittedText =
+      document.getElementById("inputText").value ||
+      document.getElementById("inputUrl").value;
+
+    if (!rating) {
+      alert("Please select a rating before submitting feedback.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/submit_feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          feedback_text: feedbackText,
+          submitted_text: submittedText,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById("feedbackMsg").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("feedbackMsg").style.display = "none";
+        }, 3000);
+      } else {
+        alert(result.error || "Failed to submit feedback.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit feedback.");
+    }
   });
 });
 
-document.getElementById("feedbackBtn").addEventListener("click", () => {
-  if (rating > 0) {
-    document.getElementById("feedbackMsg").style.display = "block";
-    setTimeout(() => {
-      document.getElementById("feedbackMsg").style.display = "none";
-    }, 3000);
-  } else {
-    alert("Please select a rating before submitting feedback.");
-  }
-});
+
+
+
