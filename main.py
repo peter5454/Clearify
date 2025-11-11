@@ -16,7 +16,7 @@ from database import save_feedback
 
 
 
-load_dotenv(dotenv_path="key.env")
+load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 gemini_model = genai.GenerativeModel("gemini-2.5-flash")
