@@ -1,16 +1,16 @@
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 from Dbias.bias_classification import classifier
-from transformers import AutoConfig
+
 # ============================================================
 # MODEL CONFIGURATION
 # ============================================================
-POLITICAL_MODEL_PATH = "political_model"
-SBIC_MODEL_PATH = "sbic_model"
-FAKE_NEWS_MODEL_PATH = "fake_news_model"
+POLITICAL_MODEL_REPO = "pe5tr/political_model"
+SBIC_MODEL_PATH = "sbic_model"        # keep local if not on HF
+FAKE_NEWS_MODEL_PATH = "fake_news_model"  # keep local if not on HF
 
-cfg = AutoConfig.from_pretrained(POLITICAL_MODEL_PATH)
+cfg = AutoConfig.from_pretrained(POLITICAL_MODEL_REPO)
 print("config.id2label:", getattr(cfg, "id2label", None))
 print("config.label2id:", getattr(cfg, "label2id", None))
 
@@ -19,15 +19,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ============================================================
 # LOAD MODELS & TOKENIZERS
 # ============================================================
-def load_model_and_tokenizer(model_path):
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path)
+def load_model_and_tokenizer(model_path_or_repo):
+    tokenizer = AutoTokenizer.from_pretrained(model_path_or_repo)
+    model = AutoModelForSequenceClassification.from_pretrained(model_path_or_repo)
     model.to(device)
     model.eval()
     return tokenizer, model
 
 # Load models once at import
-political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL_PATH)
+political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL_REPO)
 fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
 sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
 
@@ -51,27 +51,17 @@ sbic_label_map = {
 # MODEL HELPERS
 # ============================================================
 def get_dbias_score(text: str) -> float:
-    """
-    Returns bias intensity score (0–100) using Dbias classifier.
-    """
     try:
-        # Import the tokenizer used by the classifier
         from Dbias.bias_classification import tokenizer as dbias_tokenizer
-        
-        # Tokenize manually to check token count
+
         tokens = dbias_tokenizer(
             text,
             truncation=True,
-            max_length=512,  # TF DistilBERT limit
+            max_length=512,
             return_tensors="tf"
         )
-        
-        # Decode back truncated tokens into safe text
         safe_text = dbias_tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
-        
-        # Run classifier safely
         result = classifier(safe_text)
-        print (result)
         label = result[0]['label']
         confidence = result[0]['score']
 
@@ -105,7 +95,6 @@ def analyze_social_bias(text: str) -> dict:
     }
 
 def analyze_fake_news(text: str) -> float:
-    """Return fake news probability as 0-100 scale."""
     inputs = fake_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
     with torch.no_grad():
         outputs = fake_news_model(**inputs)
