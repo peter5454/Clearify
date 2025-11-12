@@ -50,7 +50,7 @@ def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_sc
     # --- Dbias ---
     if dbias_score > 60:  # content shows notable bias
         if dbias_score < 75:
-            votes["center"] += 0.5  # moderately biased → lean toward center (unclear side)
+            votes["center"] += 0.6  # moderately biased → lean toward center (unclear side)
         else:
             # extremely biased, reduce neutrality
             votes["center"] -= 0.3

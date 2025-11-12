@@ -6,7 +6,7 @@ from transformers import AutoConfig
 # ============================================================
 # MODEL CONFIGURATION
 # ============================================================
-POLITICAL_MODEL_PATH = "bias_model"
+POLITICAL_MODEL_PATH = "political_model"
 SBIC_MODEL_PATH = "sbic_model"
 FAKE_NEWS_MODEL_PATH = "fake_news_model"
 
