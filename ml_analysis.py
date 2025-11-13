@@ -6,11 +6,11 @@ from Dbias.bias_classification import classifier
 # ============================================================
 # MODEL CONFIGURATION
 # ============================================================
-POLITICAL_MODEL_REPO = "pe5tr/political_model"
-SBIC_MODEL_PATH = "sbic_model"        # keep local if not on HF
-FAKE_NEWS_MODEL_PATH = "fake_news_model"  # keep local if not on HF
+POLITICAL_MODEL = "pe5tr/political_model"
+SBIC_MODEL_PATH = "pe5tr/sbic_model"        # keep local if not on HF
+FAKE_NEWS_MODEL_PATH = "pe5tr/fake_news_model"  # keep local if not on HF
 
-cfg = AutoConfig.from_pretrained(POLITICAL_MODEL_REPO)
+cfg = AutoConfig.from_pretrained(POLITICAL_MODEL)
 print("config.id2label:", getattr(cfg, "id2label", None))
 print("config.label2id:", getattr(cfg, "label2id", None))
 
@@ -19,15 +19,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ============================================================
 # LOAD MODELS & TOKENIZERS
 # ============================================================
-def load_model_and_tokenizer(model_path_or_repo):
-    tokenizer = AutoTokenizer.from_pretrained(model_path_or_repo)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path_or_repo)
+def load_model_and_tokenizer(model_path):
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    model = AutoModelForSequenceClassification.from_pretrained(model_path)
     model.to(device)
     model.eval()
     return tokenizer, model
 
 # Load models once at import
-political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL_REPO)
+political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL)
 fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
 sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
 
