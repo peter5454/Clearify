@@ -4,7 +4,7 @@ psycopg2-binary==2.9.7
 google-generativeai==0.2.1
 requests==2.31.0
 spacy==3.7.1
-torch==2.1.0+cpu
+torch==2.1.0
 transformers==4.44.0
 numpy==1.26.0
 pandas==2.1.1
