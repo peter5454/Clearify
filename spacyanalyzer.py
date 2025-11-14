@@ -1,9 +1,10 @@
 import spacy
 from collections import Counter
 import re
+import en_core_web_sm
 
 # Load SpaCy model
-nlp = spacy.load("en_core_web_sm")
+nlp = en_core_web_sm.load()
 
 # ----------------------------
 # Named Entity Recognition (NER)
