@@ -16,8 +16,12 @@ from database import save_feedback
 
 
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
 
 def get_gemini_model():
     return genai.GenerativeModel("gemini-2.5-flash")
