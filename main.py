@@ -19,11 +19,8 @@ from database import save_feedback
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-try:
-    gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-except Exception as e:
-    print("Gemini init failed:", e)
-    gemini_model = None
+def get_gemini_model():
+    return genai.GenerativeModel("gemini-2.5-flash")
 
 app = Flask(__name__)
 
@@ -109,7 +106,8 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     """
 
     # Call Gemini
-    response = gemini_model.generate_content(prompt)
+    model = get_gemini_model()
+    response = model.generate_content(prompt)
     gemini_text = getattr(response, "text", "") or str(response)
 
     # Try to parse JSON robustly
