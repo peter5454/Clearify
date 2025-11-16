@@ -19,7 +19,11 @@ from database import save_feedback
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+try:
+    gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+except Exception as e:
+    print("Gemini init failed:", e)
+    gemini_model = None
 
 app = Flask(__name__)
 
