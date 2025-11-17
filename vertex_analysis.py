@@ -1,6 +1,7 @@
 # vertex_analysis.py
 from google.cloud import aiplatform
-from Dbias.bias_classification import classifier 
+from Dbias.bias_classification import classifier
+from Dbias.bias_classification import tokenizer as dbias_tokenizer
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -13,15 +14,11 @@ LOCATION = "us-central1"           # <-- Set this in Cloud Run
 
 # --- Vertex AI Endpoint IDs ---
 # Replace with the actual Endpoint ID strings from your Vertex AI console
-POLITICAL_ENDPOINT_ID = "1234567890"  # Example ID
-SBIC_ENDPOINT_ID = "0987654321"        # Example ID
-FAKE_NEWS_ENDPOINT_ID = "1122334455"   # Example ID
+POLITICAL_ENDPOINT_ID = "5922821748713062400"  # Example ID
+SBIC_ENDPOINT_ID = "6684493035692097536"        # Example ID
+FAKE_NEWS_ENDPOINT_ID = "8963314447141568512"   # Example ID
 # ----------------------------------------------------------------------
 
-# Disable CUDA/TF warnings if not needed for local Dbias model
-# NOTE: This must be done BEFORE any TensorFlow imports
-tf.config.set_visible_devices([], 'GPU')
-tf.get_logger().setLevel('ERROR')
 
 
 # --- Client Initialization ---

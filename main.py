@@ -9,24 +9,38 @@ from vertex_analysis import (
 )
 import os
 import google.generativeai as genai
-from dotenv import load_dotenv
 import json
 import re
-from database import save_feedback
+from database import save_feedback # Assuming this will use the DATABASE_URL secret
 
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# --- CRITICAL CHANGE FOR GEMINI API KEY ---
+# We now directly read the GOOGLE_API_KEY from the environment.
+# Cloud Run will be configured to inject the Secret Manager value into this variable.
+gemini_api_key = os.getenv("GOOGLE_API_KEY")
+
+if not gemini_api_key:
+    # Fail fast if the critical API key is missing
+    print("FATAL ERROR: GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
+else:
+    genai.configure(api_key=gemini_api_key)
+# -------------------------------------------
 
 
 def get_gemini_model():
+    # This check ensures that if the key was missing, we don't try to initialize genai
+    if not gemini_api_key:
+        raise RuntimeError("Gemini API Key is not configured.")
     return genai.GenerativeModel("gemini-2.5-flash")
 
 app = Flask(__name__)
+
+# [ ... The derive_final_verdict function remains UNCHANGED ... ]
 
 def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_score):
     """
@@ -77,6 +91,8 @@ def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_sc
     final_verdict = max(votes, key=votes.get)
     return final_verdict, votes
 
+
+# [ ... The summarize_clearify_results function remains UNCHANGED ... ]
 
 def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label, sentiment_score, sentiment_label):
     # Derive final verdict combining all signals
@@ -154,8 +170,7 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     return gemini_summary, final_verdict, votes
 
 
-
-
+# [ ... The Flask routes remain UNCHANGED ... ]
 
 @app.route('/')
 def home():
@@ -195,7 +210,6 @@ def analyze():
     fake_news_score = analyze_fake_news(text)
 
     # ✅ Pass results into summarizer (no re-runs)
-    # ... after computing entities, sentiment, results, political_result, sbic_result, bias_score, bias_label, fake_news_score
     gemini_summary, final_verdict, votes = summarize_clearify_results(
         text,
         political_result,
@@ -244,12 +258,12 @@ def submit_feedback():
     if not rating or not (1 <= int(rating) <= 5):
         return jsonify({"error": "Invalid rating"}), 400
 
+    # The save_feedback function (in database.py) must be updated to use the DATABASE_URL
+    # environment variable, which will be provided by Secret Manager.
     save_feedback(int(rating), feedback_text, submitted_text)
     return jsonify({"message": "Feedback saved successfully!"})
 
 
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+if __name__ == "__main__":   
+    port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
