@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from scraper import scrape_article
 from spacyanalyzer import extract_entities, analyze_sentiment, full_analysis
-from ml_analysis import (
+from vertex_analysis import (
     analyze_political_bias,
     analyze_social_bias,
     analyze_fake_news,
