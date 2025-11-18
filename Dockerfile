@@ -10,8 +10,7 @@ RUN pip install transformers Dbias
 # The models are: pe5tr/political_model, pe5tr/sbic_model, pe5tr/fake_news_model
 # And the Dbias model: d4data/bias-detection-model
 
-RUN python -c " \
-from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
+RUN python -c "from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
 AutoModelForSequenceClassification.from_pretrained('pe5tr/political_model'); \
 AutoModelForSequenceClassification.from_pretrained('pe5tr/sbic_model'); \
 AutoModelForSequenceClassification.from_pretrained('pe5tr/fake_news_model'); \
