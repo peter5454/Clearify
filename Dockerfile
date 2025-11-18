@@ -11,11 +11,11 @@ RUN pip install transformers Dbias
 # And the Dbias model: d4data/bias-detection-model
 
 RUN python -c " \
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
-    AutoModelForSequenceClassification.from_pretrained('pe5tr/political_model'); \
-    AutoModelForSequenceClassification.from_pretrained('pe5tr/sbic_model'); \
-    AutoModelForSequenceClassification.from_pretrained('pe5tr/fake_news_model'); \
-    AutoModelForSequenceClassification.from_pretrained('d4data/bias-detection-model', use_safetensors=True)"
+from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
+AutoModelForSequenceClassification.from_pretrained('pe5tr/political_model'); \
+AutoModelForSequenceClassification.from_pretrained('pe5tr/sbic_model'); \
+AutoModelForSequenceClassification.from_pretrained('pe5tr/fake_news_model'); \
+AutoModelForSequenceClassification.from_pretrained('d4data/bias-detection-model', use_safetensors=True)"
 
 # Set the cache directory for the models
 ENV HF_HOME=/root/.cache/huggingface
