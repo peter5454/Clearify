@@ -1,11 +1,43 @@
 import spacy
+from spacytextblob.spacytextblob import SpacyTextBlob
 from collections import Counter
 import re
-import en_core_web_sm
 
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+from typing import Dict
 # Load SpaCy model
-nlp = en_core_web_sm.load()
+nlp = spacy.load('en_core_web_sm')
 
+if "spacytextblob" not in nlp.pipe_names:
+    nlp.add_pipe("spacytextblob", last=True)
+
+_EMOTION_PIPELINE = None
+
+_SMALL_EMOTION_LEXICON = {
+    "love", "hate", "fear", "anger", "joy", "disgust", "trust", "surprise",
+    "happy", "sad", "angry", "excited", "afraid", "terrified", "disgusted",
+}
+
+
+def _get_emotion_pipeline():
+
+    global _EMOTION_PIPELINE
+    if _EMOTION_PIPELINE is not None:
+        return _EMOTION_PIPELINE
+
+    model_name = "cardiffnlp/twitter-roberta-base-emotion"
+
+    # Create pipeline (this downloads model the first time)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    _EMOTION_PIPELINE = pipeline(
+        "text-classification",
+        model=model,
+        tokenizer=tokenizer,
+        return_all_scores=True,
+        device=-1  # CPU. If you have GPU, set device=0
+    )
+    return _EMOTION_PIPELINE
 # ----------------------------
 # Named Entity Recognition (NER)
 # ----------------------------
@@ -15,33 +47,30 @@ def extract_entities(text: str):
 
 
 # ----------------------------
-# Simple Sentiment Analysis
-# (Can be replaced by transformer or ML model later)
+# TRUE Sentiment Analysis (spaCyTextBlob)
 # ----------------------------
 def analyze_sentiment(text: str):
-    """
-    Returns (sentiment_score, sentiment_label)
-    where score ∈ [-1, 1] and label is Positive/Negative/Neutral.
-    """
-    text_lower = text.lower()
-    positive_words = ["good", "great", "excellent", "positive", "trust", "reliable", "beneficial"]
-    negative_words = ["bad", "terrible", "horrible", "negative", "corrupt", "fake", "biased"]
 
-    pos_count = sum(text_lower.count(w) for w in positive_words)
-    neg_count = sum(text_lower.count(w) for w in negative_words)
+    doc = nlp(text)
 
-    if pos_count > neg_count:
-        score = round((pos_count - neg_count) / (pos_count + neg_count + 1), 2)
+    polarity = float(doc._.blob.polarity)
+    polarity = round(polarity, 4)
+
+    # sentiment % conversion:
+    sentiment_percentage = round(((polarity + 1) / 2) * 100, 2)
+
+    # sentiment label
+    if polarity > 0.05:
         label = "Positive"
-    elif neg_count > pos_count:
-        score = round(-(neg_count - pos_count) / (pos_count + neg_count + 1), 2)
+        sentiment_percentage = round(polarity * 100, 2)
+    elif polarity < -0.05:
         label = "Negative"
+        sentiment_percentage = round(abs(polarity) * 100, 2)
     else:
-        score = 0
         label = "Neutral"
+        sentiment_percentage = 50.0
 
-    return score, label
-
+    return label, sentiment_percentage
 
 # ----------------------------
 # Word Repetition / Frequency
@@ -55,66 +84,33 @@ def analyze_word_repetition(text: str, top_n: int = 5):
 # ----------------------------
 # Tone & Emotional Analysis
 # ----------------------------
-def analyze_tone(text: str):
-    """
-    Detects basic tone characteristics (emotionally charged words, balance).
-    """
-    emotional_words = ["love", "hate", "fear", "anger", "joy", "disgust", "trust", "surprise"]
-    total_words = len(text.split())
-    emotion_count = sum(1 for w in text.lower().split() if w in emotional_words)
+def analyze_tone(text: str) -> Dict:
 
-    percentage = round((emotion_count / total_words) * 100, 2) if total_words > 0 else 0
-    tone = "Emotionally charged" if percentage > 10 else "Neutral and objective"
+    pipe = _get_emotion_pipeline()
+
+    preds = pipe(text)[0]
+
+    # Convert model outputs to clean dict
+    scores = {item["label"].lower(): round(float(item["score"]), 4) for item in preds}
+
+    # Ensure consistent 7-class output
+    expected = ["anger", "joy", "optimism", "sadness", "surprise", "disgust", "fear"]
+    for e in expected:
+        scores.setdefault(e, 0.0)
+
+    primary_emotion = max(scores, key=scores.get)
+    emotion_strength = scores[primary_emotion]
+
+    # optional lightweight lexicon match for % emotionally-charged words
+    words = re.findall(r'\b\w+\b', text.lower())
+    total_words = max(len(words), 1)
+    emotion_word_count = sum(1 for w in words if w in _SMALL_EMOTION_LEXICON)
+    emotional_words_percentage = round((emotion_word_count / total_words) * 100, 2)
 
     return {
-        "emotional_words_percentage": percentage,
-        "tone": tone
+        "tone": f"Primary emotion: {primary_emotion}",
+        "emotion_scores": scores,
+        "primary_emotion": primary_emotion,
+        "emotion_strength": round(emotion_strength, 4),
+        "emotional_words_percentage": emotional_words_percentage
     }
-
-
-# ----------------------------
-# Combined Full Analysis
-# ----------------------------
-def full_analysis(text: str):
-    """
-    Performs all major analysis steps and returns a structured dictionary
-    compatible with your frontend results section.
-    """
-
-    entities = extract_entities(text)
-    sentiment_score, sentiment_label = analyze_sentiment(text)
-    tone_result = analyze_tone(text)
-    word_repetition = analyze_word_repetition(text)
-
-    # Example bias/risk and reliability scoring (basic heuristics)
-    bias_score = round(abs(sentiment_score) * 100)
-    fake_news_risk = max(5, 20 - (len(entities) * 2))
-    domain_data_score = 80 + (len(entities) % 10)
-    user_computer_data = 100 - domain_data_score
-
-    results = {
-        "words_analyzed": len(text.split()),
-        "bias_score": bias_score,
-        "fake_news_risk": fake_news_risk,
-        "domain_data_score": domain_data_score,
-        "user_computer_data": user_computer_data,
-        "emotional_words_percentage": tone_result["emotional_words_percentage"],
-        "source_reliability": "High" if domain_data_score > 70 else "Low",
-        "positive_sentiment": max(0, sentiment_score * 100) if sentiment_label == "Positive" else 0,
-        "negative_sentiment": abs(sentiment_score * 100) if sentiment_label == "Negative" else 0,
-        "word_repetition": word_repetition,
-        "framing_perspective": "Content suggests framing consistent with recent online sources.",
-        "overall_tone": tone_result["tone"],
-        "biasRisk": "Low" if bias_score < 50 else "High",
-        "domainScore": domain_data_score,
-        "languageTone": tone_result["tone"],
-        "sentiment": {"score": sentiment_score, "label": sentiment_label},
-        "wordFreq": {w["word"]: w["count"] for w in word_repetition},
-        "summary": "The analysis shows low bias and a generally positive sentiment tone.",
-        "overview": "This content demonstrates moderate political bias but maintains factual accuracy.",
-        "reliability": "Most sources appear trustworthy, with minor subjective language detected.",
-        "recommendation": "Cross-check similar sources to confirm facts and reduce potential framing bias.",
-        "entities": entities
-    }
-
-    return results

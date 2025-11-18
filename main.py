@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from scraper import scrape_article
-from spacyanalyzer import extract_entities, analyze_sentiment, full_analysis
+from spacyanalyzer import extract_entities, analyze_sentiment, analyze_word_repetition,analyze_tone
 from ml_analysis import (
     analyze_political_bias,
     analyze_social_bias,
@@ -23,7 +23,7 @@ gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 app = Flask(__name__)
 
-def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_score):
+def derive_final_verdict(political, social, fake_news, dbias_score):
     """
     Combine multiple model outputs into one final verdict.
     Returns: "Left", "Right", or "Center"
@@ -64,18 +64,15 @@ def derive_final_verdict(political, social, fake_news, dbias_score, sentiment_sc
         votes["left"] += 0.1  # leaning left conservatively if untrustworthy
         votes["right"] += 0.1
 
-    # --- Sentiment ---
-    if sentiment_score < 0.2:
-        votes["center"] += 0.1  # neutral sentiment boosts center
 
     # Choose label with highest weighted vote
     final_verdict = max(votes, key=votes.get)
     return final_verdict, votes
 
 
-def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label, sentiment_score, sentiment_label):
+def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label):
     # Derive final verdict combining all signals
-    final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score, sentiment_score)
+    final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score)
 
     # Build structured analysis object to pass into prompt
     analysis = {
@@ -84,7 +81,6 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
         "social_bias": social,
         "fake_news_score": fake_news,
         "dbias": {"score": dbias_score, "label": dbias_label},
-        "sentiment": {"score": sentiment_score, "label": sentiment_label},
         "weighted_votes": votes,
         "final_verdict": final_verdict
     }
@@ -181,12 +177,13 @@ def analyze():
 
     # ✅ Run all models once
     entities = extract_entities(text)
-    sentiment_score, sentiment_label = analyze_sentiment(text)
-    results = full_analysis(text)
     political_result = analyze_political_bias(text)
     sbic_result = analyze_social_bias(text)
     bias_score, bias_label = get_dbias_score(text)
     fake_news_score = analyze_fake_news(text)
+    word_repetition = analyze_word_repetition(text)
+    tone_result = analyze_tone(text)
+    sentiment_label, sentiment_percentage = analyze_sentiment(text)
 
     # ✅ Pass results into summarizer (no re-runs)
     # ... after computing entities, sentiment, results, political_result, sbic_result, bias_score, bias_label, fake_news_score
@@ -197,8 +194,6 @@ def analyze():
         fake_news_score,
         bias_score,
         bias_label,
-        sentiment_score,
-        sentiment_label
     )
 
     final_result = {
@@ -206,18 +201,15 @@ def analyze():
         "bias_score": bias_score,
         "bias_label": bias_label,
         "fake_news_risk": fake_news_score,
-        "domain_data_score": 72,
-        "user_computer_data": 28,
-        "emotional_words_percentage": 12,
-        "source_reliability": "High",
-        "framing_perspective": "Neutral",
-        "positive_sentiment": int(sentiment_score * 100 if sentiment_label == 'Positive' else 50),
-        "negative_sentiment": int(sentiment_score * 100 if sentiment_label == 'Negative' else 50),
-        "word_repetition": [{"word": w, "count": 1} for w in text.split()[:5]],
-        "overview": results.get("overview", ""),
-        "reliability": results.get("reliability", ""),
-        "recommendation": results.get("recommendation", ""),
-        "overall_tone": results.get("overall_tone", ""),
+        #"domain_data_score": 72,
+        #"user_computer_data": 28,
+        "emotional_words_percentage": tone_result.get("emotional_words_percentage", 0),
+        #"source_reliability": "High",
+        #"framing_perspective": "Neutral",
+        "positive_sentiment": sentiment_percentage if sentiment_label == "Positive" else 0,
+        "negative_sentiment": sentiment_percentage if sentiment_label == "Negative" else 0,
+        "word_repetition": word_repetition,
+        "overall_tone": tone_result.get("tone", ""),
         "political_analysis": political_result,
         "social_bias_analysis": sbic_result,
         "final_verdict": final_verdict,
