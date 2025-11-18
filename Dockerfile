@@ -7,7 +7,7 @@ FROM python:3.11-buster AS model_builder
 # 'Dbias' brings in TensorFlow. We manually install PyTorch here.
 # Note: You can skip 'Dbias' here and only install the specific classes
 # but installing it ensures its dependencies are met for the download step.
-RUN pip install transformers Dbias torch
+RUN pip install transformers Dbias torch tf-keras
 
 # Run a Python script to force the download of the required models.
 # We will use the PyTorch class for the PyTorch models (pe5tr/*) and the
