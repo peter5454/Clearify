@@ -42,8 +42,7 @@ def _get_emotion_pipeline():
 # Named Entity Recognition
 # ----------------------------
 def extract_entities(text: str):
-    model = get_nlp()
-    doc = model(text)
+    doc = nlp(text)
     return [(ent.text, ent.label_) for ent in doc.ents]
 
 

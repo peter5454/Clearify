@@ -83,40 +83,22 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 // DISPLAY RESULTS FUNCTION
 // ========================================================
 function displayResults(result) {
-  // ----- Support different bias_score shapes -----
-  // backend may return bias_score as number or as [score,label]
+  // ----- Bias Score -----
   let biasScoreNum = 0;
-  let dbiasLabel = "unknown";
   if (Array.isArray(result.bias_score)) {
     biasScoreNum = result.bias_score[0];
-    dbiasLabel = result.bias_score[1] || "unknown";
   } else if (typeof result.bias_score === "number") {
     biasScoreNum = result.bias_score;
-  } else {
-    // If nested like {score:..., label:...}
-    if (result.bias_score && typeof result.bias_score === "object") {
-      biasScoreNum = result.bias_score.score || 0;
-      dbiasLabel = result.bias_score.label || "unknown";
-    }
+  } else if (result.bias_score?.score) {
+    biasScoreNum = result.bias_score.score;
   }
 
-  // ----- Basic Overview -----
   document.getElementById("wordsAnalyzed").textContent = result.words_analyzed ?? 0;
   document.getElementById("biasScore").textContent = `Bias: ${Math.round(biasScoreNum)}%`;
-  // show dbias label appended as small text (optional)
-  // If you want to show label near the bias score:
-  // document.getElementById("biasScore").textContent += ` (${dbiasLabel})`;
-
   document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${result.fake_news_risk ?? 0}%`;
 
-  // ----- Domain Data -----
-  document.getElementById("reliableScore").textContent = `${result.domain_data_score ?? 0}% Reliable devices`;
-  document.getElementById("redFlagScore").textContent = `${result.user_computer_data ?? 0}% Red flags`;
-
-  // ----- Language and Tone -----
+  // ----- Emotional Words -----
   document.getElementById("emotionalWords").textContent = `${result.emotional_words_percentage ?? 0}%`;
-  document.getElementById("sourceReliability").textContent = result.source_reliability ?? "Unknown";
-  document.getElementById("framingPerspective").textContent = result.framing_perspective ?? "—";
 
   // ----- Sentiment -----
   document.getElementById("positiveSentiment").textContent = `${result.positive_sentiment ?? 0}%`;
@@ -131,125 +113,57 @@ function displayResults(result) {
     wordList.appendChild(li);
   });
 
-
-  // ----- Sentiment Chart (unchanged) -----
-  if (window.sentimentChart instanceof Chart) {
-    window.sentimentChart.destroy();
-  }
+  // ----- Sentiment Chart -----
+  if (window.sentimentChart instanceof Chart) window.sentimentChart.destroy();
   const ctxSentiment = document.getElementById("sentimentChart");
   window.sentimentChart = new Chart(ctxSentiment, {
     type: "bar",
     data: {
       labels: ["Positive", "Negative"],
-      datasets: [
-        {
-          label: "Sentiment Distribution",
-          data: [result.positive_sentiment ?? 0, result.negative_sentiment ?? 0],
-          backgroundColor: ["#4CAF50", "#F44336"],
-        },
-      ],
+      datasets: [{ label: "Sentiment", data: [result.positive_sentiment ?? 0, result.negative_sentiment ?? 0], backgroundColor: ["#4CAF50", "#F44336"] }],
     },
     options: { responsive: true },
   });
 
-  // ----- Word Frequency Chart (unchanged) -----
-  if (window.wordChart instanceof Chart) {
-    window.wordChart.destroy();
-  }
+  // ----- Word Frequency Chart -----
+  if (window.wordChart instanceof Chart) window.wordChart.destroy();
   const ctxWord = document.getElementById("wordChart");
   const labels = (result.word_repetition || []).map((w) => w.word);
   const counts = (result.word_repetition || []).map((w) => w.count);
   window.wordChart = new Chart(ctxWord, {
     type: "pie",
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          data: counts,
-          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#9CCC65", "#FF7043"],
-        },
-      ],
-    },
+    data: { labels: labels, datasets: [{ data: counts, backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#9CCC65", "#FF7043"] }] },
     options: { responsive: true },
   });
 
-  // ----- Political Analysis (new) -----
-  // political_result expected: { prediction: "left"|"center"|"right", confidence: 0.### }
+  // ----- Political Analysis -----
   const pol = result.political_analysis || {};
-  const polPred = pol.prediction ? String(pol.prediction).toUpperCase() : "UNKNOWN";
-  const polConf = typeof pol.confidence === "number" ? Math.round(pol.confidence * 100) : (pol.confidence || 0);
-
-  document.getElementById("politicalLabel").textContent = polPred;
+  document.getElementById("politicalLabel").textContent = (pol.prediction || "UNKNOWN").toUpperCase();
+  const polConf = Math.round((pol.confidence || 0) * 100);
   document.getElementById("politicalConfidence").textContent = `${polConf}%`;
-  const polProg = document.getElementById("politicalProgress");
-  polProg.style.width = `${polConf}%`;
-  // color tweak for common labels:
-  polProg.classList.remove("right","center");
-  if ((pol.prediction || "").toLowerCase() === "right") polProg.classList.add("right");
-  if ((pol.prediction || "").toLowerCase() === "center") polProg.classList.add("center");
+  document.getElementById("politicalProgress").style.width = `${polConf}%`;
 
-
-  // ----- Social Bias Analysis (new) -----
-  // sbic_result expected: { bias_category: "race"|"gender"|..., confidence: 0.### }
+  // ----- Social Bias Analysis -----
   const sb = result.social_bias_analysis || {};
-  const sbPred = sb.bias_category ? String(sb.bias_category) : "none";
-  const sbConf = typeof sb.confidence === "number" ? Math.round(sb.confidence * 100) : (sb.confidence || 0);
-
-  document.getElementById("socialLabel").textContent = sbPred.replace(/^\w/, (c) => c.toUpperCase());
+  document.getElementById("socialLabel").textContent = (sb.bias_category || "None").replace(/^\w/, (c) => c.toUpperCase());
+  const sbConf = Math.round((sb.confidence || 0) * 100);
   document.getElementById("socialConfidence").textContent = `${sbConf}%`;
-  const sbProg = document.getElementById("socialProgress");
-  sbProg.style.width = `${sbConf}%`;
+  document.getElementById("socialProgress").style.width = `${sbConf}%`;
 
-  // Show results section if hidden
-  const resultsDiv = document.getElementById("results");
-  if (resultsDiv && resultsDiv.style.display === "none") {
-    resultsDiv.style.display = "block";
-  }
-    // ----- Gemini summary integration (if available) -----
+  // ----- Gemini Summary -----
   const geminiCard = document.getElementById("gemini-summary-card");
-  const gemini = result.gemini_summary || null;
-
-  if (gemini && typeof gemini === "object") {
-    // Show card
+  if (result.gemini_summary) {
     geminiCard.style.display = "block";
-
-    document.getElementById("geminiOverall").textContent =
-      gemini.overall_summary || "No overall summary available.";
-    document.getElementById("geminiPolitical").textContent =
-      gemini.political_bias_summary || "No political summary.";
-    document.getElementById("geminiSocial").textContent =
-      gemini.social_bias_summary || "No social summary.";
-    document.getElementById("geminiFakeNews").textContent =
-      gemini.fake_news_summary || "No fake-news summary.";
-    document.getElementById("geminiVerdict").textContent =
-      gemini.final_verdict || "No final verdict.";
-    // ---- Spectrum graph for final verdict ----
-    const verdict = (gemini.final_verdict || "").toLowerCase();
-    const spectrumMarker = document.getElementById("spectrumMarker");
-
-    // Default position (center)
-    let position = 50;
-    let label = "Center";
-
-    if (verdict.includes("left")) {
-      position = 15;
-      label = "Left";
-    } else if (verdict.includes("right")) {
-      position = 85;
-      label = "Right";
-    } else if (verdict.includes("center") || verdict.includes("neutral")) {
-      position = 50;
-      label = "Center";
-    }
-    spectrumMarker.style.left = `calc(${position}% - 5px)`;
-
-
-  } else if (typeof gemini === "string" && gemini.trim()) {
-    geminiCard.style.display = "block";
-    document.getElementById("geminiOverall").textContent = gemini;
+    document.getElementById("geminiOverall").textContent = result.gemini_summary.overall_summary || "—";
+    document.getElementById("geminiPolitical").textContent = result.gemini_summary.political_bias_summary || "—";
+    document.getElementById("geminiSocial").textContent = result.gemini_summary.social_bias_summary || "—";
+    document.getElementById("geminiFakeNews").textContent = result.gemini_summary.fake_news_summary || "—";
+    document.getElementById("geminiVerdict").textContent = result.gemini_summary.final_verdict || "—";
   } else {
     geminiCard.style.display = "none";
   }
+
+  document.getElementById("results").style.display = "block";
 }
 
   
