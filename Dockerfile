@@ -4,7 +4,7 @@
 FROM python:3.11-buster AS model_builder
 
 # Install libraries needed to download models
-RUN pip install transformers Dbias
+RUN pip install transformers Dbias torch
 
 # Run a Python script to force the download of the required models
 # The models are: pe5tr/political_model, pe5tr/sbic_model, pe5tr/fake_news_model
