@@ -1,5 +1,4 @@
 Flask==2.3.3
-python-dotenv==1.0.1
 psycopg2-binary==2.9.7
 google-generativeai==0.2.1
 requests==2.31.0
@@ -18,4 +17,6 @@ google-cloud-aiplatform
 google-generativeai
 gunicorn
 spacytextblob
+tensorflow
+tf-keras 
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
