@@ -145,7 +145,7 @@ def get_dbias_score(text: str):
         return round(score, 2), label
 
     except Exception as e:
-        print(f"[Dbias Error] {}")
+        print(f"[Dbias Error] {e}")
         return 0.0, "unknown"
 
 # ============================================================
