@@ -39,10 +39,11 @@ def _get_emotion_pipeline():
     )
     return _EMOTION_PIPELINE
 # ----------------------------
-# Named Entity Recognition (NER)
+# Named Entity Recognition
 # ----------------------------
 def extract_entities(text: str):
-    doc = nlp(text)
+    model = get_nlp()
+    doc = model(text)
     return [(ent.text, ent.label_) for ent in doc.ents]
 
 
@@ -73,7 +74,7 @@ def analyze_sentiment(text: str):
     return label, sentiment_percentage
 
 # ----------------------------
-# Word Repetition / Frequency
+# Word Frequency
 # ----------------------------
 def analyze_word_repetition(text: str, top_n: int = 5):
     words = re.findall(r'\b\w+\b', text.lower())
@@ -82,7 +83,7 @@ def analyze_word_repetition(text: str, top_n: int = 5):
 
 
 # ----------------------------
-# Tone & Emotional Analysis
+# Tone
 # ----------------------------
 def analyze_tone(text: str) -> Dict:
 

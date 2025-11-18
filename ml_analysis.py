@@ -7,8 +7,8 @@ from Dbias.bias_classification import classifier
 # MODEL CONFIGURATION
 # ============================================================
 POLITICAL_MODEL = "pe5tr/political_model"
-SBIC_MODEL_PATH = "pe5tr/sbic_model"        # keep local if not on HF
-FAKE_NEWS_MODEL_PATH = "pe5tr/fake_news_model"  # keep local if not on HF
+SBIC_MODEL_PATH = "pe5tr/sbic_model"
+FAKE_NEWS_MODEL_PATH = "pe5tr/fake_news_model"
 
 cfg = AutoConfig.from_pretrained(POLITICAL_MODEL)
 print("config.id2label:", getattr(cfg, "id2label", None))
@@ -17,7 +17,7 @@ print("config.label2id:", getattr(cfg, "label2id", None))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================================================
-# LOAD MODELS & TOKENIZERS
+# MODEL LOADING (Lazy load to avoid Render timeouts)
 # ============================================================
 def load_model_and_tokenizer(model_path):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -26,10 +26,14 @@ def load_model_and_tokenizer(model_path):
     model.eval()
     return tokenizer, model
 
-# Load models once at import
-political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL)
-fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
-sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
+political_tokenizer = None
+political_model = None
+
+fake_tokenizer = None
+fake_news_model = None
+
+sbic_tokenizer = None
+sbic_model = None
 
 # ============================================================
 # LABEL MAPS
@@ -48,9 +52,9 @@ sbic_label_map = {
 }
 
 # ============================================================
-# MODEL HELPERS
+# D-BIAS SCORE
 # ============================================================
-def get_dbias_score(text: str) -> float:
+def get_dbias_score(text: str):
     try:
         from Dbias.bias_classification import tokenizer as dbias_tokenizer
 
@@ -62,6 +66,7 @@ def get_dbias_score(text: str) -> float:
         )
         safe_text = dbias_tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
         result = classifier(safe_text)
+
         label = result[0]['label']
         confidence = result[0]['score']
 
@@ -70,35 +75,71 @@ def get_dbias_score(text: str) -> float:
 
     except Exception as e:
         print(f"[Dbias Error] {e}")
-        return 0.0
+        return 0.0, "unknown"
 
+# ============================================================
+# POLITICAL BIAS ANALYSIS
+# ============================================================
 def analyze_political_bias(text: str) -> dict:
-    inputs = political_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
+    global political_tokenizer, political_model
+
+    if political_model is None:
+        political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL)
+
+    inputs = political_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+
     with torch.no_grad():
         outputs = political_model(**inputs)
         probs = F.softmax(outputs.logits, dim=-1)
         pred_label = torch.argmax(probs, dim=1).item()
+
     return {
         "prediction": political_label_map[pred_label],
         "confidence": round(probs[0][pred_label].item(), 3)
     }
 
+# ============================================================
+# SOCIAL BIAS ANALYSIS
+# ============================================================
 def analyze_social_bias(text: str) -> dict:
-    inputs = sbic_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
+    global sbic_tokenizer, sbic_model
+
+    if sbic_model is None:
+        sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
+
+    inputs = sbic_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+
     with torch.no_grad():
         outputs = sbic_model(**inputs)
         probs = F.softmax(outputs.logits, dim=-1)
         pred_label = torch.argmax(probs, dim=1).item()
+
     return {
         "bias_category": sbic_label_map[pred_label],
         "confidence": round(probs[0][pred_label].item(), 3)
     }
 
+# ============================================================
+# FAKE NEWS ANALYSIS
+# ============================================================
 def analyze_fake_news(text: str) -> float:
-    inputs = fake_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
+    global fake_tokenizer, fake_news_model
+
+    if fake_news_model is None:
+        fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
+
+    inputs = fake_tokenizer(
+        text, return_tensors="pt", padding=True, truncation=True, max_length=512
+    ).to(device)
+
     with torch.no_grad():
         outputs = fake_news_model(**inputs)
         probs = F.softmax(outputs.logits, dim=-1)
+
         pred_label = torch.argmax(probs, dim=1).item()
         confidence = probs[0][pred_label].item()
 
