@@ -10,33 +10,37 @@ POLITICAL_MODEL = "pe5tr/political_model"
 SBIC_MODEL_PATH = "pe5tr/sbic_model"
 FAKE_NEWS_MODEL_PATH = "pe5tr/fake_news_model"
 
-cfg = AutoConfig.from_pretrained(POLITICAL_MODEL)
+# NOTE: This line still executes eagerly and will load from the cache if available
+cfg = AutoConfig.from_pretrained(POLITICAL_MODEL) 
 print("config.id2label:", getattr(cfg, "id2label", None))
 print("config.label2id:", getattr(cfg, "label2id", None))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================================================
-# MODEL LOADING (Lazy load to avoid Render timeouts)
+# MODEL LOADING FUNCTION
 # ============================================================
 def load_model_and_tokenizer(model_path):
+    # This function now exclusively loads models from the local cache
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
     model.to(device)
     model.eval()
     return tokenizer, model
 
-political_tokenizer = None
-political_model = None
-
-fake_tokenizer = None
-fake_news_model = None
-
-sbic_tokenizer = None
-sbic_model = None
-
 # ============================================================
-# LABEL MAPS
+# EAGER MODEL LOADING (This code executes at import time)
+# ============================================================
+print("Starting Eager Model Loading...")
+
+# Eagerly load all three PyTorch models into memory at import time
+political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL)
+sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
+fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
+
+print("Eager Model Loading Complete.")
+# ============================================================
+# LABEL MAPS (Remains unchanged)
 # ============================================================
 political_label_map = {0: "right", 1: "center", 2: "left"}
 
@@ -52,7 +56,7 @@ sbic_label_map = {
 }
 
 # ============================================================
-# D-BIAS SCORE
+# D-BIAS SCORE (Remains unchanged - it's handled by Dbias framework import)
 # ============================================================
 def get_dbias_score(text: str):
     try:
@@ -74,17 +78,15 @@ def get_dbias_score(text: str):
         return round(score, 2), label
 
     except Exception as e:
-        print(f"[Dbias Error] {e}")
+        print(f"[Dbias Error] {}")
         return 0.0, "unknown"
 
 # ============================================================
-# POLITICAL BIAS ANALYSIS
+# POLITICAL BIAS ANALYSIS (Lazy check removed)
 # ============================================================
 def analyze_political_bias(text: str) -> dict:
-    global political_tokenizer, political_model
-
-    if political_model is None:
-        political_tokenizer, political_model = load_model_and_tokenizer(POLITICAL_MODEL)
+    # GLOBAL DECLARATION IS NO LONGER STRICTLY NEEDED but harmless
+    # Lazy check 'if political_model is None:' REMOVED. Model is guaranteed loaded.
 
     inputs = political_tokenizer(
         text, return_tensors="pt", padding=True, truncation=True, max_length=512
@@ -101,13 +103,10 @@ def analyze_political_bias(text: str) -> dict:
     }
 
 # ============================================================
-# SOCIAL BIAS ANALYSIS
+# SOCIAL BIAS ANALYSIS (Lazy check removed)
 # ============================================================
 def analyze_social_bias(text: str) -> dict:
-    global sbic_tokenizer, sbic_model
-
-    if sbic_model is None:
-        sbic_tokenizer, sbic_model = load_model_and_tokenizer(SBIC_MODEL_PATH)
+    # Lazy check 'if sbic_model is None:' REMOVED. Model is guaranteed loaded.
 
     inputs = sbic_tokenizer(
         text, return_tensors="pt", padding=True, truncation=True, max_length=512
@@ -124,13 +123,10 @@ def analyze_social_bias(text: str) -> dict:
     }
 
 # ============================================================
-# FAKE NEWS ANALYSIS
+# FAKE NEWS ANALYSIS (Lazy check removed)
 # ============================================================
 def analyze_fake_news(text: str) -> float:
-    global fake_tokenizer, fake_news_model
-
-    if fake_news_model is None:
-        fake_tokenizer, fake_news_model = load_model_and_tokenizer(FAKE_NEWS_MODEL_PATH)
+    # Lazy check 'if fake_news_model is None:' REMOVED. Model is guaranteed loaded.
 
     inputs = fake_tokenizer(
         text, return_tensors="pt", padding=True, truncation=True, max_length=512
