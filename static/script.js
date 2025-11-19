@@ -83,14 +83,21 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 // POLITICAL BAR ANIMATION
 // ========================================================
 function updatePoliticalBar(value) {
-  // value = 0.0 (left), 0.5 (center), 1.0 (right)
-  const bar = document.getElementById("politicalBar");
-  if (!bar) return;
+  // value: 0 = left, 0.5 = center, 1 = right
 
-  const percent = value * 100;
+  const marker = document.getElementById("spectrumMarker");
+  const bar = document.getElementById("spectrumBar");
 
-  bar.style.transition = "left 0.7s ease-out";
-  bar.style.left = percent + "%";
+  if (!marker || !bar) return;
+
+  const barWidth = bar.offsetWidth;
+  const markerWidth = marker.offsetWidth;
+
+  // Center the marker on the value position
+  const position = value * (barWidth - markerWidth);
+
+  marker.style.transition = "left 0.5s ease-out";
+  marker.style.left = position + "px";
 }
 
 // ========================================================
