@@ -20,6 +20,7 @@ genai_client = None
 
 gemini_api_key = os.getenv("GOOGLE_API_KEY")
 
+print(f"!!! FINAL CHECK: GOOGLE_API_KEY value is: {os.getenv('GOOGLE_API_KEY')}")
 
 if not gemini_api_key:
     # 1. This check will tell you if the ENV var is missing
