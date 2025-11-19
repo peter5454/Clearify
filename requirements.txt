@@ -14,7 +14,6 @@ dbias==0.1.3
 lxml==5.2.1
 lxml_html_clean==0.1.1
 google-cloud-aiplatform
-google-generativeai
 gunicorn
 spacytextblob
 google-cloud-storage
