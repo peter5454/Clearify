@@ -13,6 +13,7 @@ from ml_analysis import (
 )
 from database import save_feedback
 import google.genai as genai
+from database import get_db_connection
 
 # ---------------- Logging Setup ---------------- #
 logging.basicConfig(
@@ -179,6 +180,15 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
 def home():
     logger.info("Serving home page.")
     return render_template('index.html')
+
+@app.route("/health/db")
+def db_health_route():
+    healthy = check_db_health()
+    if healthy:
+        return jsonify({"database": "OK"}), 200
+    else:
+        return jsonify({"database": "ERROR"}), 500
+
 
 @app.route('/about')
 def about():
