@@ -33,6 +33,7 @@ if not gemini_api_key:
     logger.error("GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
 else:
     try:
+        # Note: You were using genai.Client(api_key=...) which is the correct syntax for google-genai
         genai_client = genai.Client(api_key=gemini_api_key)
         logger.info("Gemini client initialized successfully.")
     except Exception as e:
@@ -110,10 +111,11 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash", # Switched to 2.5-flash since 2.0-flash is not a standard name
             contents=[prompt]
         )
-        gemini_text = getattr(response, "output_text", "").strip()
+        # Note: Using .text property for robustness, which is standard on the response object
+        gemini_text = getattr(response, "text", "").strip() 
         logger.info("Gemini API call successful.")
     except Exception as e:
         logger.exception(f"Gemini API call failed: {e}")
@@ -125,15 +127,30 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
             "final_verdict": final_verdict
         }, final_verdict, votes
 
+    # ------------------ DEBUG LOGGING ADDED HERE ------------------
+    # The full output is logged, allowing us to see why JSON parsing failed.
+    logger.info("DEBUG: Gemini Raw Text Length: %d", len(gemini_text))
+    # Log the full text (up to 2000 chars to avoid overwhelming logs)
+    logger.info("DEBUG: Gemini Full Raw Text: \n%s", gemini_text[:2000]) 
+    # --------------------------------------------------------------
+
     parsed = None
     try:
+        # First attempt: parse the whole response
         parsed = json.loads(gemini_text)
-    except Exception:
+    except Exception as e:
+        logger.warning("JSON direct parse failed: %s", e)
         try:
+            # Second attempt: use regex to strip out everything before the first { and after the last }
+            # This handles markdown code fences (```json ... ```) and leading/trailing text.
             match = re.search(r"(\{[\s\S]*\})", gemini_text)
             if match:
                 parsed = json.loads(match.group(1))
-        except Exception:
+                logger.info("JSON regex parse succeeded.")
+            else:
+                logger.warning("JSON regex failed to find JSON object.")
+        except Exception as e:
+            logger.warning("JSON regex parse also failed: %s", e)
             parsed = None
 
     if isinstance(parsed, dict):
@@ -145,8 +162,10 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
             "final_verdict": parsed.get("final_verdict", final_verdict)
         }
     else:
+        # This is the fallback that was causing the empty string/null summary
+        logger.warning("Final JSON parsing failed. Returning raw text as summary.")
         gemini_summary = {
-            "overall_summary": gemini_text,
+            "overall_summary": gemini_text, # Return the raw text so we can see it in the final result
             "political_bias_summary": None,
             "social_bias_summary": None,
             "fake_news_summary": None,
