@@ -17,83 +17,68 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
-# --- CRITICAL CHANGE FOR GEMINI API KEY ---
-# This block is now simplified, removing the attempt to create a Client object.
+genai_client = None
+
+
+
 gemini_api_key = os.getenv("GOOGLE_API_KEY")
 
 if not gemini_api_key:
     print("FATAL ERROR: GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
 else:
-    # This line is sufficient to configure the module-level API access for v0.2.1
     genai.configure(api_key=gemini_api_key)
+    try:
+        genai_client = genai.Client()
+    except Exception as e:
+        print(f"FATAL ERROR: Could not initialize Gemini Client with genai.Client(): {e}")
+        genai_client = None
 # -------------------------------------------
 
 
-# --- MODIFIED: Renamed and simplified function to return the model name ---
-def get_gemini_model_name(): 
-    """Returns the model name string for direct API calls in v0.2.1."""
-    if not gemini_api_key:
-        raise RuntimeError("Gemini API Key is not configured.")
-    # In this version, we don't need a model object; we just need the name.
-    return "gemini-2.5-flash"
+
+def get_gemini_client(): 
+    if genai_client is None:
+        raise RuntimeError("Gemini Client is not configured or failed to initialize.")
+    return genai_client
 
 app = Flask(__name__)
 
-# [ ... derive_final_verdict function remains unchanged ... ]
-
 def derive_final_verdict(political, social, fake_news, dbias_score):
-    """
-    Combine multiple model outputs into one final verdict.
-    Returns: "Left", "Right", or "Center"
-    """
-    # Initialize weighted votes
+    # [ ... derive_final_verdict function remains unchanged ... ]
     votes = {"left": 0, "center": 0, "right": 0}
 
-    # --- Political model ---
     p_label = political["prediction"]
     p_conf = political["confidence"]
     votes[p_label] += p_conf
 
-    # --- Social bias heuristic ---
     if social["bias_category"] in ["race", "gender", "social", "culture"]:
-        # Indicates a socially sensitive topic → less neutral
         votes["center"] -= 0.2
         votes["left"] += 0.1
         votes["right"] += 0.1
     else:
-        # No major social bias detected → slightly more neutral
         votes["center"] += 0.2
 
-
-    # --- Dbias ---
-    if dbias_score > 60:  # content shows notable bias
+    if dbias_score > 60:
         if dbias_score < 75:
-            votes["center"] += 0.6  # moderately biased → lean toward center (unclear side)
+            votes["center"] += 0.6
         else:
-            # extremely biased, reduce neutrality
             votes["center"] -= 0.3
             votes["left"] += 0.2
             votes["right"] += 0.2
 
-    # --- Fake news heuristic ---
     if fake_news > 70:
-        # Penalize credibility
         votes["center"] -= 0.2
-        votes["left"] += 0.1  # leaning left conservatively if untrustworthy
+        votes["left"] += 0.1
         votes["right"] += 0.1
 
-
-    # Choose label with highest weighted vote
     final_verdict = max(votes, key=votes.get)
     return final_verdict, votes
 
 
-# --- MODIFIED: summarize_clearify_results function to call API directly ---
+# --- MODIFIED: summarize_clearify_results uses the client object ---
 def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label):
-    # Derive final verdict combining all signals
     final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score)
 
-    # Build structured analysis object to pass into prompt
     analysis = {
         "input_text": text,
         "political_bias": political,
@@ -120,17 +105,15 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     """
 
     # Call Gemini
-    # In v0.2.1, the original get_gemini_model() was meant to return the model name string.
-    model_name = get_gemini_model_name() 
+    client = get_gemini_client() # Get the initialized client object
     
     try:
-        # FIX: The model-level API call is done directly on the genai module
-        response = genai.generate_content(
-            model=model_name, # Pass the model name as the argument
+        # FIX: The correct modern call using the client object
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
             contents=prompt
         )
     except Exception as e:
-        # Graceful failure
         print(f"Gemini API call failed: {e}")
         gemini_summary = {
             "overall_summary": f"Error: Gemini API call failed. Details: {e}",
@@ -143,7 +126,6 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     
     gemini_text = getattr(response, "text", "") or str(response)
 
-    # Try to parse JSON robustly
     parsed = None
     gemini_json_fallback = {
         "overall_summary": None,
@@ -153,11 +135,9 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
         "final_verdict": final_verdict
     }
 
-    # 1) Try direct JSON parse
     try:
         parsed = json.loads(gemini_text)
     except Exception:
-        # 2) Try to find the first {...} JSON object substring
         try:
             match = re.search(r"(\{[\s\S]*\})", gemini_text)
             if match:
@@ -166,7 +146,6 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
             parsed = None
 
     if isinstance(parsed, dict):
-        # ensure keys exist and keep final_verdict consistent
         gemini_summary = {
             "overall_summary": parsed.get("overall_summary") or parsed.get("overallSummary") or parsed.get("summary"),
             "political_bias_summary": parsed.get("political_bias_summary") or parsed.get("politicalBiasSummary"),
@@ -175,15 +154,12 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
             "final_verdict": parsed.get("final_verdict") or final_verdict
         }
     else:
-        # If parsing failed, put the raw text into overall_summary for front-end display
         gemini_summary = gemini_json_fallback.copy()
         gemini_summary["overall_summary"] = gemini_text.strip()
         gemini_summary["final_verdict"] = final_verdict
 
     return gemini_summary, final_verdict, votes
 
-
-# [ ... The Flask routes remain UNCHANGED ... ]
 
 @app.route('/')
 def home():
@@ -213,7 +189,6 @@ def analyze():
     if not text.strip():
         return jsonify({"error": "Empty text provided."}), 400
 
-    # ✅ Run all models once
     entities = extract_entities(text)
     political_result = analyze_political_bias(text)
     sbic_result = analyze_social_bias(text)
@@ -223,7 +198,6 @@ def analyze():
     tone_result = analyze_tone(text)
     sentiment_label, sentiment_percentage = analyze_sentiment(text)
 
-    # ✅ Pass results into summarizer (no re-runs)
     gemini_summary, final_verdict, votes = summarize_clearify_results(
         text,
         political_result,
@@ -238,11 +212,7 @@ def analyze():
         "bias_score": bias_score,
         "bias_label": bias_label,
         "fake_news_risk": fake_news_score,
-        #"domain_data_score": 72,
-        #"user_computer_data": 28,
         "emotional_words_percentage": tone_result.get("emotional_words_percentage", 0),
-        #"source_reliability": "High",
-        #"framing_perspective": "Neutral",
         "positive_sentiment": sentiment_percentage if sentiment_label == "Positive" else 0,
         "negative_sentiment": sentiment_percentage if sentiment_label == "Negative" else 0,
         "word_repetition": word_repetition,
@@ -267,8 +237,6 @@ def submit_feedback():
     if not rating or not (1 <= int(rating) <= 5):
         return jsonify({"error": "Invalid rating"}), 400
 
-    # The save_feedback function (in database.py) must be updated to use the DATABASE_URL
-    # environment variable, which will be provided by Secret Manager.
     save_feedback(int(rating), feedback_text, submitted_text)
     return jsonify({"message": "Feedback saved successfully!"})
 

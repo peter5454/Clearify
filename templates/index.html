@@ -72,26 +72,26 @@
         </div>
       </div>
 
-      <!-- ===== Language and Tone Analysis ===== -->
+ <!-- ===== Combined Language, Tone, Sentiment, and Bias ===== -->
       <div class="card">
-        <div class="card-header">Language and Tone Analysis</div>
+        <div class="card-header">Language, Tone, Sentiment & Bias</div>
         <div class="card-content">
+
+          <!-- Language and Tone -->
           <div class="summary-block">
-            <strong>Code for user data:</strong>
+            <strong>Emotion:</strong>
             <p>Language and tone: <span id="emotionalWords">12%</span> of words were emotionally charged</p>
           </div>
-        </div>
-      </div>
 
-      <!-- ===== Sentiment and Bias ===== -->
-      <div class="card">
-        <div class="card-header">Sentiment and Bias</div>
-        <div class="card-content">
+          <hr class="my-4">
+
+          <!-- Sentiment and Bias -->
           <p><span id="positiveSentiment">90%</span> Positive sentiment</p>
-          <p><span id="negativeSentiment">84%</span> Negative sentiment about government work</p>
+          <p><span id="negativeSentiment">84%</span> Negative sentiment</p>
           <canvas id="sentimentChart" width="400" height="200"></canvas>
         </div>
       </div>
+
       <!-- ===== Political & Social Bias Analysis ===== -->
       <div class="card">
         <div class="card-header">Political & Social Bias</div>
