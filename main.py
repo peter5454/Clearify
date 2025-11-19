@@ -82,6 +82,12 @@ def derive_final_verdict(political, social, fake_news, dbias_score):
 def summarize_clearify_results(text, political, social, fake_news, dbias_score, dbias_label):
     client = get_gemini_client()
     final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score)
+    verdict_to_bar = {
+    "left": 0.0,
+    "center": 0.5,
+    "right": 1.0
+    }
+    bar_target = verdict_to_bar.get(final_verdict, 0.5)
 
     analysis = {
         "input_text": text,
@@ -172,7 +178,7 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
             "final_verdict": final_verdict
         }
 
-    return gemini_summary, final_verdict, votes
+    return gemini_summary, final_verdict, votes, bar_target
 
 # ---------------- Routes ---------------- #
 @app.route('/')
@@ -219,7 +225,7 @@ def analyze():
         tone_result = analyze_tone(text)
         sentiment_label, sentiment_percentage = analyze_sentiment(text)
 
-        gemini_summary, final_verdict, votes = summarize_clearify_results(
+        gemini_summary, final_verdict, votes, bar_target = summarize_clearify_results(
             text,
             political_result,
             sbic_result,
@@ -242,7 +248,8 @@ def analyze():
             "social_bias_analysis": sbic_result,
             "final_verdict": final_verdict,
             "weighted_votes": votes,
-            "gemini_summary": gemini_summary
+            "gemini_summary": gemini_summary,
+            "bar_target": bar_target
         }
 
         logger.info("Analysis completed successfully for input type: %s", input_type)

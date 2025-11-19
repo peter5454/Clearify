@@ -154,19 +154,28 @@ button.analyze:disabled {
 
 /* ----- SWITCH SLIDER ----- */
 .switch-container {
-  height: 40px;
-  background: var(--accent-green);
-  border-radius: 30px;
   position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 40px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-  font-family: sans-serif;
-  font-weight: bold;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.switch-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 8px);
+  height: 32px;
+  background: white;
+  border-radius: 25px;
+  transition: left 0.3s ease;
+}
+
+.switch-container.active .switch-slider {
+  left: calc(50% + 4px);
 }
 
 .switch-label {
@@ -174,23 +183,6 @@ button.analyze:disabled {
   text-align: center;
   z-index: 2; /* keep text visible above slider */
   color: black;
-}
-
-.switch-slider {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  width: 320px;
-  height: 30px;
-  background: white;
-  border-radius: 25px;
-  transition: all 0.5s ease;
-  z-index: 1;
-}
-
-.switch-container.active .switch-slider {
-  left: 342px; /* move to the right */
-  background: white;
 }
 
 .switch-container.active .switch-label.text {

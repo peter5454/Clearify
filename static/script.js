@@ -80,9 +80,24 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 });
 
 // ========================================================
+// POLITICAL BAR ANIMATION
+// ========================================================
+function updatePoliticalBar(value) {
+  // value = 0.0 (left), 0.5 (center), 1.0 (right)
+  const bar = document.getElementById("politicalBar");
+  if (!bar) return;
+
+  const percent = value * 100;
+
+  bar.style.transition = "left 0.7s ease-out";
+  bar.style.left = percent + "%";
+}
+
+// ========================================================
 // DISPLAY RESULTS FUNCTION
 // ========================================================
-  function displayResults(result) {
+function displayResults(result) {
+
   // ----- Bias -----
   let biasScoreNum = 0;
   if (Array.isArray(result.bias_score)) {
@@ -93,7 +108,7 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
     biasScoreNum = result.bias_score.score;
   }
 
-  const isBiased = biasScoreNum >= 50; // Threshold for bias
+  const isBiased = biasScoreNum >= 50; 
   const biasLabelText = isBiased ? "Biased" : "Non Biased";
 
   const biasElement = document.getElementById("biasLabel");
@@ -157,6 +172,8 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
   document.getElementById("politicalConfidence").textContent = `${polConf}%`;
   document.getElementById("politicalProgress").style.width = `${polConf}%`;
 
+  updatePoliticalBar(result.bar_target ?? 0.5);
+
   // ----- Social Bias Analysis -----
   const sb = result.social_bias_analysis || {};
   document.getElementById("socialLabel").textContent = (sb.bias_category || "None").replace(/^\w/, (c) => c.toUpperCase());
@@ -179,10 +196,6 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 
   document.getElementById("results").style.display = "block";
 }
-
-  
-
-
 
 // ========================================================
 // MOCK RESULTS FOR FALLBACK
@@ -208,15 +221,15 @@ function displayMockResults() {
     overview: "This content demonstrates moderate political bias but maintains factual accuracy.",
     reliability: "Most sources appear trustworthy, with minor subjective language detected.",
     recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias.",
-    overview: "This content demonstrates moderate political bias but maintains factual accuracy.",
-    reliability: "Most sources appear trustworthy, with minor subjective language detected.",
-    recommendation: "Cross-check similar sources to confirm facts and reduce potential framing bias.",
-
+    bar_target: 0.5
   };
 
   displayResults(mockResult);
 }
-//FEEDBACK / STAR RATING SYSTEM
+
+// ========================================================
+// FEEDBACK / STAR RATING SYSTEM
+// ========================================================
 document.addEventListener("DOMContentLoaded", () => {
   const stars = document.querySelectorAll("#stars span");
   let rating = 0;
@@ -230,7 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ===== FEEDBACK SUBMISSION =====
   document.getElementById("feedbackBtn").addEventListener("click", async () => {
     const feedbackText = document.getElementById("feedbackText").value;
     const submittedText =
@@ -268,7 +280,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
-
-
