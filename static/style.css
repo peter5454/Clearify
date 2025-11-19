@@ -379,3 +379,12 @@ th {
   margin-top: 4px;
 }
 
+.bias-green {
+  color: #16a34a; /* Tailwind green-600 */
+  font-weight: 600;
+}
+
+.bias-red {
+  color: #dc2626; /* Tailwind red-600 */
+  font-weight: 600;
+}

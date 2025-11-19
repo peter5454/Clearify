@@ -110,7 +110,7 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=[prompt]
         )
         gemini_text = getattr(response, "output_text", "").strip()

@@ -82,8 +82,8 @@ document.getElementById("analyzeBtn").addEventListener("click", async function (
 // ========================================================
 // DISPLAY RESULTS FUNCTION
 // ========================================================
-function displayResults(result) {
-  // ----- Bias Score -----
+  function displayResults(result) {
+  // ----- Bias -----
   let biasScoreNum = 0;
   if (Array.isArray(result.bias_score)) {
     biasScoreNum = result.bias_score[0];
@@ -93,8 +93,18 @@ function displayResults(result) {
     biasScoreNum = result.bias_score.score;
   }
 
+  const isBiased = biasScoreNum >= 50; // Threshold for bias
+  const biasLabelText = isBiased ? "Biased" : "Non Biased";
+
+  const biasElement = document.getElementById("biasLabel");
+  biasElement.textContent = `Bias: ${biasLabelText} (${Math.round(biasScoreNum)}%)`;
+  biasElement.style.color = isBiased ? "red" : "green";
+  biasElement.style.fontWeight = "600";
+
+  // ----- Words Analyzed -----
   document.getElementById("wordsAnalyzed").textContent = result.words_analyzed ?? 0;
-  document.getElementById("biasScore").textContent = `Bias: ${Math.round(biasScoreNum)}%`;
+
+  // ----- Fake News -----
   document.getElementById("fakeNewsScore").textContent = `Fake News Risk: ${result.fake_news_risk ?? 0}%`;
 
   // ----- Emotional Words -----
@@ -120,7 +130,11 @@ function displayResults(result) {
     type: "bar",
     data: {
       labels: ["Positive", "Negative"],
-      datasets: [{ label: "Sentiment", data: [result.positive_sentiment ?? 0, result.negative_sentiment ?? 0], backgroundColor: ["#4CAF50", "#F44336"] }],
+      datasets: [{
+        label: "Sentiment",
+        data: [result.positive_sentiment ?? 0, result.negative_sentiment ?? 0],
+        backgroundColor: ["#4CAF50", "#F44336"]
+      }],
     },
     options: { responsive: true },
   });
@@ -132,7 +146,7 @@ function displayResults(result) {
   const counts = (result.word_repetition || []).map((w) => w.count);
   window.wordChart = new Chart(ctxWord, {
     type: "pie",
-    data: { labels: labels, datasets: [{ data: counts, backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#9CCC65", "#FF7043"] }] },
+    data: { labels, datasets: [{ data: counts, backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#9CCC65", "#FF7043"] }] },
     options: { responsive: true },
   });
 
