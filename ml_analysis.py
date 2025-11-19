@@ -14,8 +14,8 @@ PROJECT_ID = "eighth-breaker-478412-h9"
 LOCAL_MODEL_BASE_PATH = "/tmp/huggingface_models"
 
 # GCS Paths relative to the bucket root
-GCS_POLITICAL_PATH = "fake_news_model" # Assuming your paths were swapped in the old example
-GCS_FAKE_NEWS_PATH = "political_model" # Assuming your paths were swapped in the old example
+GCS_POLITICAL_PATH = "political_model" # Assuming your paths were swapped in the old example
+GCS_FAKE_NEWS_PATH = "fake_news_model" # Assuming your paths were swapped in the old example
 GCS_SBIC_PATH = "sbic_model"
 GCS_DBIAS_PATH = "Dbias_model" # NEW: Path to your uploaded Dbias model
 
