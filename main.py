@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from scraper import scrape_article
-from spacyanalyzer import extract_entities, analyze_sentiment, analyze_word_repetition,analyze_tone
+from spacyanalyzer import extract_entities, analyze_sentiment, analyze_word_repetition, analyze_tone
 from ml_analysis import (
     analyze_political_bias,
     analyze_social_bias,
@@ -11,32 +11,35 @@ import os
 import google.generativeai as genai
 import json
 import re
-from database import save_feedback # Assuming this will use the DATABASE_URL secret
-
-
+from database import save_feedback 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+genai_client = None
 
-# --- CRITICAL CHANGE FOR GEMINI API KEY ---
-# We now directly read the GOOGLE_API_KEY from the environment.
-# Cloud Run will be configured to inject the Secret Manager value into this variable.
 gemini_api_key = os.getenv("GOOGLE_API_KEY")
 
 if not gemini_api_key:
-    # Fail fast if the critical API key is missing
     print("FATAL ERROR: GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
 else:
+    # 1. Configure the API key
     genai.configure(api_key=gemini_api_key)
+    try:
+        # 2. Initialize the global client object
+        genai_client = genai.Client()
+        print("Gemini Client initialized successfully.")
+    except Exception as e:
+        print(f"FATAL ERROR: Could not initialize Gemini Client: {e}")
+        genai_client = None
 # -------------------------------------------
 
 
 def get_gemini_model():
-    # This check ensures that if the key was missing, we don't try to initialize genai
-    if not gemini_api_key:
-        raise RuntimeError("Gemini API Key is not configured.")
-    return genai.GenerativeModel("gemini-2.5-flash")
+    """Returns the initialized Gemini client object."""
+    if genai_client is None:
+        raise RuntimeError("Gemini Client is not configured or failed to initialize.")
+    return genai_client 
 
 app = Flask(__name__)
 
@@ -88,10 +91,8 @@ def derive_final_verdict(political, social, fake_news, dbias_score):
 
 
 def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label):
-    # Derive final verdict combining all signals
     final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score)
 
-    # Build structured analysis object to pass into prompt
     analysis = {
         "input_text": text,
         "political_bias": political,
@@ -116,10 +117,25 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     - final_verdict
     Return in JSON format.
     """
-
-    # Call Gemini
-    model = get_gemini_model()
-    response = model.generate_content(prompt)
+    client = get_gemini_model() # Now returns the initialized client
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+    except Exception as e:
+        print(f"Gemini API call failed: {e}")
+        gemini_summary = {
+            "overall_summary": f"Error: Gemini API call failed. Details: {e}",
+            "political_bias_summary": "N/A",
+            "social_bias_summary": "N/A",
+            "fake_news_summary": "N/A",
+            "final_verdict": final_verdict
+        }
+        return gemini_summary, final_verdict, votes
+    # -----------------------------------------------------------------
+    
     gemini_text = getattr(response, "text", "") or str(response)
 
     # Try to parse JSON robustly
@@ -252,6 +268,6 @@ def submit_feedback():
     return jsonify({"message": "Feedback saved successfully!"})
 
 
-if __name__ == "__main__":   
+if __name__ == "__main__": 
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
