@@ -20,18 +20,22 @@ genai_client = None
 
 gemini_api_key = os.getenv("GOOGLE_API_KEY")
 
+
 if not gemini_api_key:
-    print("FATAL ERROR: GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
+    # 1. This check will tell you if the ENV var is missing
+    print("DEBUG: FATAL ERROR: GOOGLE_API_KEY not found in environment.")
 else:
-    # 1. Configure the API key
-    genai.configure(api_key=gemini_api_key)
+    print("DEBUG: GOOGLE_API_KEY found. Proceeding with configuration...")
     try:
-        # 2. Initialize the global client object
+        # 2. This check will see if configuration is the problem
+        genai.configure(api_key=gemini_api_key)
+        
+        # 3. This check will see if the client instantiation is the problem
         genai_client = genai.Client()
-        print("Gemini Client initialized successfully.")
+        print("DEBUG: Gemini Client initialized successfully.")
     except Exception as e:
-        print(f"FATAL ERROR: Could not initialize Gemini Client: {e}")
-        genai_client = None
+        print(f"DEBUG: FATAL ERROR: Gemini configuration or client initialization failed: {e}")
+        # The client remains None, correctly triggering the RuntimeError later
 # -------------------------------------------
 
 
