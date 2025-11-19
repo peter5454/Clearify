@@ -16,37 +16,30 @@ from database import save_feedback
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-genai_client = None
 
+# --- CRITICAL CHANGE FOR GEMINI API KEY ---
+# This block is now simplified, removing the attempt to create a Client object.
 gemini_api_key = os.getenv("GOOGLE_API_KEY")
 
-print(f"!!! FINAL CHECK: GOOGLE_API_KEY value is: {os.getenv('GOOGLE_API_KEY')}")
-
 if not gemini_api_key:
-    # 1. This check will tell you if the ENV var is missing
-    print("DEBUG: FATAL ERROR: GOOGLE_API_KEY not found in environment.")
+    print("FATAL ERROR: GOOGLE_API_KEY not found in environment. Gemini functionality will fail.")
 else:
-    print("DEBUG: GOOGLE_API_KEY found. Proceeding with configuration...")
-    try:
-        # 2. This check will see if configuration is the problem
-        genai.configure(api_key=gemini_api_key)
-        
-        # 3. This check will see if the client instantiation is the problem
-        genai_client = genai.Client()
-        print("DEBUG: Gemini Client initialized successfully.")
-    except Exception as e:
-        print(f"DEBUG: FATAL ERROR: Gemini configuration or client initialization failed: {e}")
-        # The client remains None, correctly triggering the RuntimeError later
+    # This line is sufficient to configure the module-level API access for v0.2.1
+    genai.configure(api_key=gemini_api_key)
 # -------------------------------------------
 
 
-def get_gemini_model():
-    """Returns the initialized Gemini client object."""
-    if genai_client is None:
-        raise RuntimeError("Gemini Client is not configured or failed to initialize.")
-    return genai_client 
+# --- MODIFIED: Renamed and simplified function to return the model name ---
+def get_gemini_model_name(): 
+    """Returns the model name string for direct API calls in v0.2.1."""
+    if not gemini_api_key:
+        raise RuntimeError("Gemini API Key is not configured.")
+    # In this version, we don't need a model object; we just need the name.
+    return "gemini-2.5-flash"
 
 app = Flask(__name__)
+
+# [ ... derive_final_verdict function remains unchanged ... ]
 
 def derive_final_verdict(political, social, fake_news, dbias_score):
     """
@@ -95,9 +88,12 @@ def derive_final_verdict(political, social, fake_news, dbias_score):
     return final_verdict, votes
 
 
+# --- MODIFIED: summarize_clearify_results function to call API directly ---
 def summarize_clearify_results(text: str, political, social, fake_news, dbias_score, dbias_label):
+    # Derive final verdict combining all signals
     final_verdict, votes = derive_final_verdict(political, social, fake_news, dbias_score)
 
+    # Build structured analysis object to pass into prompt
     analysis = {
         "input_text": text,
         "political_bias": political,
@@ -122,14 +118,19 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
     - final_verdict
     Return in JSON format.
     """
-    client = get_gemini_model() # Now returns the initialized client
+
+    # Call Gemini
+    # In v0.2.1, the original get_gemini_model() was meant to return the model name string.
+    model_name = get_gemini_model_name() 
     
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
+        # FIX: The model-level API call is done directly on the genai module
+        response = genai.generate_content(
+            model=model_name, # Pass the model name as the argument
             contents=prompt
         )
     except Exception as e:
+        # Graceful failure
         print(f"Gemini API call failed: {e}")
         gemini_summary = {
             "overall_summary": f"Error: Gemini API call failed. Details: {e}",
@@ -139,7 +140,6 @@ def summarize_clearify_results(text: str, political, social, fake_news, dbias_sc
             "final_verdict": final_verdict
         }
         return gemini_summary, final_verdict, votes
-    # -----------------------------------------------------------------
     
     gemini_text = getattr(response, "text", "") or str(response)
 
