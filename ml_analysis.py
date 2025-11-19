@@ -13,9 +13,9 @@ PROJECT_ID = "eighth-breaker-478412-h9"
 LOCAL_MODEL_BASE_PATH = "/tmp/huggingface_models"
 
 # GCS Paths relative to the bucket root
-GCS_POLITICAL_PATH = "clearify/fake_news_model" 
-GCS_FAKE_NEWS_PATH = "clearify/political_model"  
-GCS_SBIC_PATH = "clearify/sbic_model"
+GCS_POLITICAL_PATH = "fake_news_model" 
+GCS_FAKE_NEWS_PATH = "political_model"  
+GCS_SBIC_PATH = "sbic_model"
 
 # Local directories where models will be saved
 POLITICAL_MODEL_DIR = os.path.join(LOCAL_MODEL_BASE_PATH, "political_model")
