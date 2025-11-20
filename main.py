@@ -11,7 +11,9 @@ from ml_analysis import (
     analyze_fake_news,
     get_dbias_score
 )
+from database import save_feedback, check_db_health
 import google.genai as genai
+
 from database import get_db_connection
 
 # ---------------- Logging Setup ---------------- #
