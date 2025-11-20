@@ -133,7 +133,11 @@ print("Eager Local Model Loading Complete.")
 # ============================================================
 # LABEL MAPS (Unchanged)
 # ============================================================
-political_label_map = {0: "right", 1: "center", 2: "left"}
+political_label_map = {
+    0: "left",
+    1: "center",
+    2: "right"
+}
 
 sbic_label_map = {
     0: "none",
