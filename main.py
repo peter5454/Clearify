@@ -66,12 +66,9 @@ def derive_final_verdict(political, social, fake_news, dbias_score):
         votes["center"] += 0.2
 
     if dbias_score > 60:
-        if dbias_score < 75:
-            votes["center"] += 0.6
-        else:
-            votes["center"] -= 0.3
-            votes["left"] += 0.2
-            votes["right"] += 0.2
+        votes["center"] -= 0.3
+        votes["left"] += 0.2
+        votes["right"] += 0.2
 
     if fake_news > 70:
         votes["center"] -= 0.2
