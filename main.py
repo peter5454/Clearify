@@ -161,7 +161,6 @@ def summarize_clearify_results(text, political, social, fake_news, dbias_score, 
             "final_verdict": parsed.get("final_verdict", final_verdict)
         }
     else:
-        # This is the fallback that was causing the empty string/null summary
         logger.warning("Final JSON parsing failed. Returning raw text as summary.")
         gemini_summary = {
             "overall_summary": gemini_text, # Return the raw text so we can see it in the final result

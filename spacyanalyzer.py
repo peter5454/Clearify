@@ -5,20 +5,18 @@ from collections import Counter
 import re
 from typing import Dict
 
-# --- NEW IMPORTS for GCS and Model Loading ---
+
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-from google.cloud import storage # Assuming you copy this function's dependencies
+from google.cloud import storage 
 
-# --- GCS CONFIGURATION (Mirroring ml_analysis.py) ---
+# --- GCS CONFIGURATION ---
 BUCKET_NAME = "clearify" 
-PROJECT_ID = "eighth-breaker-478412-h9" # Replace with your project ID
+PROJECT_ID = "eighth-breaker-478412-h9" 
 LOCAL_MODEL_BASE_PATH = "/tmp/huggingface_models"
-GCS_EMOTION_PATH = "emotion_model" # Your GCS path
+GCS_EMOTION_PATH = "emotion_model"
 LOCAL_EMOTION_MODEL_DIR = os.path.join(LOCAL_MODEL_BASE_PATH, "emotion_model")
 
-# --- HELPER FUNCTION: GCS DOWNLOAD (Copy-Paste from ml_analysis.py) ---
-# NOTE: This function must be present here or imported from a helper file!
 def download_directory_from_gcs(gcs_prefix: str, local_path: str):
     """Downloads all files under a GCS prefix to a local directory."""
     print(f"Starting download: gs://{BUCKET_NAME}/{gcs_prefix} -> {local_path}")
